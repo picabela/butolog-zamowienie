@@ -124,8 +124,23 @@ try {
                     <label for="email_subject">Temat E-maila *</label>
                     <input type="text" id="email_subject" name="email_subject" value="<?php echo htmlspecialchars($email_subject_to_show); ?>" required>
 
-                    <label for="email_body">Treść E-maila (HTML)</label>
-                    <textarea id="email_body" name="email_body"><?php echo htmlspecialchars($email_body_to_show); ?></textarea>
+                    <label for="email_body">Treść E-maila</label>
+                    <div class="editor-mode-switch" role="group" aria-label="Tryb edytora wiadomości e-mail">
+                        <button type="button" class="editor-mode-button is-active" data-editor-mode="visual" aria-pressed="true">Edytor wizualny</button>
+                        <button type="button" class="editor-mode-button" data-editor-mode="html" aria-pressed="false">HTML</button>
+                    </div>
+                    <div id="email_visual_tools" class="visual-editor-toolbar" aria-label="Narzędzia edytora wizualnego">
+                        <button type="button" data-command="bold"><strong>B</strong></button>
+                        <button type="button" data-command="italic"><em>I</em></button>
+                        <button type="button" data-command="underline"><u>U</u></button>
+                        <button type="button" data-command="formatBlock" data-value="<h2>">Nagłówek</button>
+                        <button type="button" data-command="formatBlock" data-value="<p>">Akapit</button>
+                        <button type="button" data-command="insertUnorderedList">Lista</button>
+                        <button type="button" data-command="createLink">Link</button>
+                    </div>
+                    <div id="email_visual_editor" class="visual-email-editor" contenteditable="true" aria-label="Wizualna treść e-maila"></div>
+                    <textarea id="email_body" name="email_body" class="html-email-editor" aria-label="Treść E-maila w HTML"><?php echo htmlspecialchars($email_body_to_show); ?></textarea>
+                    <small>Domyślnie edytujesz wiadomość wizualnie. Przełącz na HTML, aby ręcznie poprawić znaczniki.</small>
                 </div>
             </fieldset>
 
@@ -168,6 +183,93 @@ try {
 <?php elseif (empty($error_message)): // Jeśli $quote jest puste, ale nie było błędu ?>
     <div class="error-message">Nie można załadować danych wyceny.</div>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const textarea = document.getElementById('email_body');
+    const visualEditor = document.getElementById('email_visual_editor');
+    const toolbar = document.getElementById('email_visual_tools');
+    const modeButtons = document.querySelectorAll('[data-editor-mode]');
+    const quoteForm = document.querySelector('.email-editor-main form');
+
+    if (!textarea || !visualEditor || !toolbar || !quoteForm) {
+        return;
+    }
+
+    let currentMode = 'html';
+
+    function htmlToVisual() {
+        visualEditor.innerHTML = textarea.value;
+    }
+
+    function visualToHtml() {
+        textarea.value = visualEditor.innerHTML.trim();
+    }
+
+    function setEditorMode(mode) {
+        if (mode === currentMode) {
+            return;
+        }
+
+        if (mode === 'html') {
+            visualToHtml();
+            visualEditor.style.display = 'none';
+            toolbar.style.display = 'none';
+            textarea.style.display = 'block';
+        } else {
+            htmlToVisual();
+            textarea.style.display = 'none';
+            visualEditor.style.display = 'block';
+            toolbar.style.display = 'flex';
+        }
+
+        currentMode = mode;
+
+        modeButtons.forEach(function (button) {
+            const isActive = button.dataset.editorMode === mode;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+    }
+
+    modeButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            setEditorMode(button.dataset.editorMode);
+        });
+    });
+
+    toolbar.addEventListener('click', function (event) {
+        const button = event.target.closest('button[data-command]');
+        if (!button) {
+            return;
+        }
+
+        const command = button.dataset.command;
+        let value = button.dataset.value || null;
+
+        if (command === 'createLink') {
+            value = window.prompt('Podaj adres linku:', 'https://');
+            if (!value) {
+                return;
+            }
+        }
+
+        visualEditor.focus();
+        document.execCommand(command, false, value);
+        visualToHtml();
+    });
+
+    visualEditor.addEventListener('input', visualToHtml);
+    quoteForm.addEventListener('submit', function () {
+        if (currentMode === 'visual') {
+            visualToHtml();
+        }
+    });
+
+    htmlToVisual();
+    setEditorMode('visual');
+});
+</script>
 
 <?php
 include 'includes/footer.php';
