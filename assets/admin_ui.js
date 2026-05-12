@@ -102,7 +102,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     templateVisualEditor.addEventListener('input', templateVisualToHtml);
-
     settingsForm.addEventListener('submit', function () {
         if (currentTemplateMode === 'visual') {
             templateVisualToHtml();
