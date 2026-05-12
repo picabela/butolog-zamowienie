@@ -1,0 +1,179 @@
+/* assets/style.css - Motyw brązowy */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f7f3f0;
+    /* Bardzo jasny brąz/beż tła */
+    color: #4f4a45;
+    /* Ciemny brąz tekstu */
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 650px;
+    margin: 40px auto;
+    background-color: #ffffff;
+    /* Białe tło kontenera */
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border-top: 5px solid #8d6e63;
+    /* Ciemniejszy brązowy akcent na górze */
+}
+
+h1,
+h2 {
+    color: #5d4037;
+    /* Główny brązowy kolor nagłówków */
+    border-bottom: 2px solid #efebe9;
+    /* Jasny brązowy separator */
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2em;
+}
+
+h2 {
+    font-size: 1.5em;
+    margin-top: 30px;
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-weight: 600;
+    /* Lekko pogrubione */
+    color: #6d4c41;
+    /* Ciemniejszy brąz etykiet */
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"] {
+    width: calc(100% - 22px);
+    /* Pełna szerokość minus padding */
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: 1px solid #d7ccc8;
+    /* Jasny brązowy border */
+    background-color: #fafafa;
+    transition: border-color 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus {
+    border-color: #8d6e63;
+    /* Ciemniejszy border przy focusie */
+    outline: none;
+    box-shadow: 0 0 5px rgba(141, 110, 99, 0.3);
+}
+
+small {
+    display: block;
+    margin-top: 5px;
+    color: #795548;
+    /* Średni brąz dla podpowiedzi */
+    font-size: 0.9em;
+}
+
+small a {
+    color: #8d6e63;
+    text-decoration: none;
+}
+
+small a:hover {
+    text-decoration: underline;
+}
+
+.button {
+    background-color: #795548;
+    /* Główny brązowy przycisku */
+    color: #ffffff;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    /* Przycisk na całą szerokość */
+    width: 100%;
+    text-align: center;
+    margin-top: 30px;
+    transition: background-color 0.3s ease;
+}
+
+.button:hover {
+    background-color: #5d4037;
+    /* Ciemniejszy brąz przy hover */
+}
+
+.info-box {
+    background-color: #efebe9;
+    /* Jasny brąz tła info */
+    border: 1px solid #d7ccc8;
+    padding: 15px;
+    border-radius: 6px;
+    margin: 20px 0;
+    color: #5d4037;
+    text-align: center;
+}
+
+.info-box strong {
+    font-size: 1.2em;
+}
+
+/* Style dla komunikatów */
+.success,
+.error {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 6px;
+    border: 1px solid;
+}
+
+.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-color: #a5d6a7;
+}
+
+.error {
+    background-color: #ffcdd2;
+    color: #c62828;
+    border-color: #ef9a9a;
+}
+
+pre {
+    background: #efebe9;
+    padding: 10px;
+    border-radius: 4px;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    border: 1px solid #d7ccc8;
+    color: #4e342e;
+}
+
+code {
+    background: #efebe9;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+a.button {
+    display: inline-block;
+    width: auto;
+    /* Przywrócenie szerokości dla linków */
+    padding: 12px 30px;
+}
