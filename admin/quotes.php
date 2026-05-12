@@ -9,6 +9,7 @@ require_once '../includes/functions.php'; // Potrzebna funkcja generate_uuid()
 
 $page_title = "Zarządzanie Wycenami"; // Ustaw tytuł strony
 include 'includes/header.php'; // Wczytaj nagłówek HTML
+include 'includes/admin_ui_assets.php';
 
 // Sprawdź, czy są jakieś komunikaty z sesji (np. po udanej akcji)
 $success_message = $_SESSION['success_message'] ?? null;
@@ -65,7 +66,7 @@ try {
 
 <h3>Istniejące Wyceny</h3>
 <?php if (!empty($quotes)): ?>
-    <div class="table-wrapper"> <table>
+    <div class="table-wrapper admin-table-wrapper quotes-table-wrapper"> <table class="admin-compact-table quotes-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -80,19 +81,19 @@ try {
             <tbody>
                 <?php foreach ($quotes as $quote): ?>
                     <tr>
-                        <td><?php echo $quote['id']; ?></td>
-                        <td><?php echo date('Y-m-d H:i', strtotime($quote['created_at'])); ?></td>
-                        <td style="word-break: break-all;"><?php echo htmlspecialchars($quote['client_email']); ?></td>
-                        <td><?php echo htmlspecialchars($quote['service_name'] ?? 'Brak (formularz usunięty?)'); ?></td>
-                        <td style="text-align: right;"><?php echo number_format($quote['price'] ?? 0, 2, ',', ' '); ?> PLN</td>
-                        <td style="text-align: center;">
+                        <td data-label="ID"><?php echo $quote['id']; ?></td>
+                        <td data-label="Data Utworzenia"><?php echo date('Y-m-d H:i', strtotime($quote['created_at'])); ?></td>
+                        <td data-label="E-mail Klienta" style="word-break: break-all;"><?php echo htmlspecialchars($quote['client_email']); ?></td>
+                        <td data-label="Powiązana Usługa"><?php echo htmlspecialchars($quote['service_name'] ?? 'Brak (formularz usunięty?)'); ?></td>
+                        <td data-label="Cena" style="text-align: right;"><?php echo number_format($quote['price'] ?? 0, 2, ',', ' '); ?> PLN</td>
+                        <td data-label="Status" style="text-align: center;">
                             <?php if ($quote['status'] == 'sent'): ?>
                                 <span class="status-sent" title="Wysłana">Wysłana</span>
                             <?php else: ?>
                                 <span class="status-draft">Szkic</span>
                             <?php endif; ?>
                         </td>
-                        <td style="text-align: center; white-space: nowrap;">
+                        <td data-label="Akcje" style="text-align: center;">
                             <a href="edit_quote.php?uuid=<?php echo $quote['uuid']; ?>" title="Edytuj i Wyślij">✏️ Edytuj</a> |
                             
                             <a href="handle_quote_action.php?action=send_quote&uuid=<?php echo $quote['uuid']; ?>&token=<?php echo $csrf_token; ?>" 

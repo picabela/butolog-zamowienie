@@ -7,6 +7,7 @@ require_once '../includes/functions.php';
 
 $page_title = "Ustawienia Systemu";
 include 'includes/header.php';
+include 'includes/admin_ui_assets.php';
 
 $success_message = $_SESSION['success_message'] ?? null;
 $error_message = $_SESSION['error_message'] ?? null;
@@ -27,13 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'large_parcel_surcharge', // <-- NOWA DOPŁATA
             'service_receiver_name', 'service_receiver_email', 'service_receiver_phone', 'service_receiver_locker',
             'sender_name_override',
-            'email_from_address', 'email_from_name'
+            'email_from_address', 'email_from_name',
+            'global_quote_subject', 'global_quote_body'
         ];
 
         try {
             $pdo->beginTransaction();
-            // Użyj REPLACE INTO zamiast ON DUPLICATE KEY UPDATE dla prostoty
-            $stmt = $pdo->prepare("REPLACE INTO settings (setting_key, setting_value) VALUES (:key, :value)");
+            $stmt_delete = $pdo->prepare("DELETE FROM settings WHERE setting_key = :key");
+            $stmt_insert = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (:key, :value)");
 
             foreach ($settings_keys_from_form as $key) {
                 if (str_ends_with($key, '_enabled')) {
@@ -42,10 +44,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                      // Walidacja dopłaty - upewnij się, że to liczba
                      $surcharge = filter_input(INPUT_POST, $key, FILTER_VALIDATE_FLOAT);
                      $value = ($surcharge !== false && $surcharge >= 0) ? number_format($surcharge, 2, '.', '') : '0.00'; // Zapisz jako string z kropką
+                } elseif ($key === 'global_quote_body') {
+                    $value = $_POST[$key] ?? '';
                 } else {
                     $value = isset($_POST[$key]) ? trim($_POST[$key]) : '';
                 }
-                $stmt->execute(['key' => $key, 'value' => $value]);
+                $stmt_delete->execute(['key' => $key]);
+                $stmt_insert->execute(['key' => $key, 'value' => $value]);
             }
 
             $pdo->commit();
@@ -176,6 +181,8 @@ $current_settings = get_all_settings($pdo);
             <input type="text" id="email_from_name" name="email_from_name" value="<?php echo get_current_setting_value('email_from_name', $current_settings); ?>" required>
         </div>
      </fieldset>
+
+    <?php include 'includes/quote_template_settings.php'; ?>
 
     <button type="submit" class="button">Zapisz Ustawienia</button>
 </form>
