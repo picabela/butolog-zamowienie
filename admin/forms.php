@@ -7,6 +7,7 @@ require_once '../includes/functions.php'; // Potrzebna funkcja generate_uuid()
 
 $page_title = "Zarządzanie Formularzami";
 include 'includes/header.php';
+include 'includes/admin_ui_assets.php';
 
 $success_message = $_SESSION['success_message'] ?? null;
 $error_message = $_SESSION['error_message'] ?? null;
