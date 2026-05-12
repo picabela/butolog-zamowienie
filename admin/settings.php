@@ -7,10 +7,7 @@ require_once '../includes/functions.php';
 
 $page_title = "Ustawienia Systemu";
 include 'includes/header.php';
-?>
-<link rel="stylesheet" href="../assets/admin_ui.css">
-<script src="../assets/admin_behaviors.js" defer></script>
-<?php
+include 'includes/admin_ui_assets.php';
 
 $success_message = $_SESSION['success_message'] ?? null;
 $error_message = $_SESSION['error_message'] ?? null;

@@ -7,10 +7,7 @@ require_once '../includes/functions.php';
 
 $page_title = "Edycja Wyceny";
 include 'includes/header.php';
-?>
-<link rel="stylesheet" href="../assets/admin_ui.css">
-<script src="../assets/admin_behaviors.js" defer></script>
-<?php
+include 'includes/admin_ui_assets.php';
 
 // Pobierz UUID wyceny z URL
 $quote_uuid = $_GET['uuid'] ?? null;
