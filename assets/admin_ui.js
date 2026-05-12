@@ -5,12 +5,8 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    Array.prototype.slice.call(settingsForm.children).forEach(function (child, index) {
-        if (child.tagName !== 'FIELDSET') {
-            return;
-        }
-
-        const legend = child.querySelector('legend');
+    settingsForm.querySelectorAll(':scope > fieldset').forEach(function (fieldset, index) {
+        const legend = fieldset.querySelector(':scope > legend');
         const title = legend ? legend.textContent.trim() : 'Ustawienia';
         const details = document.createElement('details');
         details.className = 'settings-card';
@@ -19,9 +15,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const summary = document.createElement('summary');
         summary.textContent = title;
 
-        child.parentNode.insertBefore(details, child);
+        fieldset.parentNode.insertBefore(details, fieldset);
         details.appendChild(summary);
-        details.appendChild(child);
+        details.appendChild(fieldset);
     });
 
     settingsForm.addEventListener('invalid', function (event) {
@@ -105,23 +101,12 @@ document.addEventListener('DOMContentLoaded', function () {
         templateVisualToHtml();
     });
 
-    ['beforeinput', 'input', 'keyup', 'blur', 'paste'].forEach(function (eventName) {
-        templateVisualEditor.addEventListener(eventName, function () {
-            window.setTimeout(templateVisualToHtml, 0);
-        });
-    });
+    templateVisualEditor.addEventListener('input', templateVisualToHtml);
 
     settingsForm.addEventListener('submit', function () {
         if (currentTemplateMode === 'visual') {
             templateVisualToHtml();
         }
-    }, true);
-
-    settingsForm.addEventListener('formdata', function (event) {
-        if (currentTemplateMode === 'visual') {
-            templateVisualToHtml();
-        }
-        event.formData.set('global_quote_body', templateTextarea.value);
     });
 
     htmlToTemplateVisual();
