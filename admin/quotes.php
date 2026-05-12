@@ -9,7 +9,10 @@ require_once '../includes/functions.php'; // Potrzebna funkcja generate_uuid()
 
 $page_title = "Zarządzanie Wycenami"; // Ustaw tytuł strony
 include 'includes/header.php'; // Wczytaj nagłówek HTML
-include 'includes/admin_ui_assets.php';
+?>
+<link rel="stylesheet" href="../assets/admin_ui.css">
+<script src="../assets/admin_behaviors.js" defer></script>
+<?php
 
 // Sprawdź, czy są jakieś komunikaty z sesji (np. po udanej akcji)
 $success_message = $_SESSION['success_message'] ?? null;
