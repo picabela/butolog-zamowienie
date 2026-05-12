@@ -7,6 +7,7 @@ require_once '../includes/functions.php';
 
 $page_title = "Ustawienia Systemu";
 include 'includes/header.php';
+include 'includes/admin_ui_assets.php';
 
 $success_message = $_SESSION['success_message'] ?? null;
 $error_message = $_SESSION['error_message'] ?? null;
@@ -210,6 +211,8 @@ $default_quote_body = get_default_quote_body();
             </div>
         </fieldset>
     </details>
+
+    <?php include 'includes/quote_template_settings.php'; ?>
 
     <button type="submit" class="button">Zapisz Ustawienia</button>
 </form>
