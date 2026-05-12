@@ -34,8 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         try {
             $pdo->beginTransaction();
-            // Użyj REPLACE INTO zamiast ON DUPLICATE KEY UPDATE dla prostoty
-            $stmt = $pdo->prepare("REPLACE INTO settings (setting_key, setting_value) VALUES (:key, :value)");
+            $stmt_exists = $pdo->prepare("SELECT COUNT(*) FROM settings WHERE setting_key = :key");
+            $stmt_update = $pdo->prepare("UPDATE settings SET setting_value = :value WHERE setting_key = :key");
+            $stmt_insert = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (:key, :value)");
 
             foreach ($settings_keys_from_form as $key) {
                 if (str_ends_with($key, '_enabled')) {
@@ -49,7 +50,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 } else {
                     $value = isset($_POST[$key]) ? trim($_POST[$key]) : '';
                 }
-                $stmt->execute(['key' => $key, 'value' => $value]);
+                $stmt_exists->execute(['key' => $key]);
+                if ((int) $stmt_exists->fetchColumn() > 0) {
+                    $stmt_update->execute(['key' => $key, 'value' => $value]);
+                } else {
+                    $stmt_insert->execute(['key' => $key, 'value' => $value]);
+                }
             }
 
             $pdo->commit();
@@ -211,6 +217,8 @@ $default_quote_body = get_default_quote_body();
             </div>
         </fieldset>
     </details>
+
+    <?php include 'includes/quote_template_settings.php'; ?>
 
     <?php include 'includes/quote_template_settings.php'; ?>
 
