@@ -20,7 +20,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- Użyj zmiennej $page_title, jeśli jest ustawiona, lub domyślnego tytułu -->
     <title><?php echo isset($page_title) ? htmlspecialchars($page_title) : 'Panel Admina'; ?> - BUTOLOG</title>
     <link rel="stylesheet" href="../assets/admin_style.css">
-    <link rel="stylesheet" href="../assets/admin_editor.css">
+    <link rel="stylesheet" href="../assets/admin_ui.css">
+    <script src="../assets/admin_ui.js" defer></script>
 </head>
 <body>
     <header>

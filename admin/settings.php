@@ -70,8 +70,6 @@ $csrf_token = $_SESSION['csrf_token'];
 
 // --- Pobieranie wszystkich aktualnych ustawień ---
 $current_settings = get_all_settings($pdo);
-$default_quote_subject = get_default_quote_subject();
-$default_quote_body = get_default_quote_body();
 
 ?>
 
@@ -86,245 +84,105 @@ $default_quote_body = get_default_quote_body();
     <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
     <input type="hidden" name="action" value="save_settings">
 
-    <details class="settings-card">
-        <summary>Ustawienia Przelewy24</summary>
-        <fieldset>
-            <legend>Ustawienia Przelewy24</legend>
-            <details class="settings-subcard" open>
-                <summary>Środowisko Sandbox (Testowe)</summary>
-                <div class="setting-group">
-                    <label for="sandbox_p24_pos_id">Sandbox POS ID</label>
-                    <input type="text" id="sandbox_p24_pos_id" name="sandbox_p24_pos_id" value="<?php echo get_current_setting_value('sandbox_p24_pos_id', $current_settings); ?>">
-                    <label for="sandbox_p24_crc_key">Sandbox Klucz CRC</label>
-                    <input type="text" id="sandbox_p24_crc_key" name="sandbox_p24_crc_key" value="<?php echo get_current_setting_value('sandbox_p24_crc_key', $current_settings); ?>">
-                    <label for="sandbox_p24_api_key">Sandbox Klucz API (do raportów)</label>
-                    <input type="text" id="sandbox_p24_api_key" name="sandbox_p24_api_key" value="<?php echo get_current_setting_value('sandbox_p24_api_key', $current_settings); ?>" class="monospace">
-                    <label class="checkbox-label" for="p24_sandbox_enabled">
-                        <input type="checkbox" id="p24_sandbox_enabled" name="p24_sandbox_enabled" value="true" <?php echo is_sandbox_enabled('p24_sandbox_enabled', $current_settings) ? 'checked' : ''; ?>>
-                        <strong>Aktywny Tryb Sandbox dla Przelewy24</strong>
-                    </label>
-                </div>
-            </details>
-            <details class="settings-subcard">
-                <summary>Środowisko Produkcyjne</summary>
-                <div class="setting-group">
-                    <label for="production_p24_pos_id">Produkcyjny POS ID</label>
-                    <input type="text" id="production_p24_pos_id" name="production_p24_pos_id" value="<?php echo get_current_setting_value('production_p24_pos_id', $current_settings); ?>">
-                    <label for="production_p24_crc_key">Produkcyjny Klucz CRC</label>
-                    <input type="text" id="production_p24_crc_key" name="production_p24_crc_key" value="<?php echo get_current_setting_value('production_p24_crc_key', $current_settings); ?>">
-                    <label for="production_p24_api_key">Produkcyjny Klucz API (do raportów)</label>
-                    <input type="text" id="production_p24_api_key" name="production_p24_api_key" value="<?php echo get_current_setting_value('production_p24_api_key', $current_settings); ?>" class="monospace">
-                </div>
-            </details>
-        </fieldset>
-    </details>
+    <fieldset>
+        <legend>Ustawienia Przelewy24</legend>
+        <div class="setting-group">
+             <h3>Środowisko Sandbox (Testowe)</h3>
+             <label for="sandbox_p24_pos_id">Sandbox POS ID</label>
+             <input type="text" id="sandbox_p24_pos_id" name="sandbox_p24_pos_id" value="<?php echo get_current_setting_value('sandbox_p24_pos_id', $current_settings); ?>">
+             <label for="sandbox_p24_crc_key">Sandbox Klucz CRC</label>
+             <input type="text" id="sandbox_p24_crc_key" name="sandbox_p24_crc_key" value="<?php echo get_current_setting_value('sandbox_p24_crc_key', $current_settings); ?>">
+             <label for="sandbox_p24_api_key">Sandbox Klucz API (do raportów)</label>
+             <input type="text" id="sandbox_p24_api_key" name="sandbox_p24_api_key" value="<?php echo get_current_setting_value('sandbox_p24_api_key', $current_settings); ?>" class="monospace">
+             <label class="checkbox-label" for="p24_sandbox_enabled">
+                <input type="checkbox" id="p24_sandbox_enabled" name="p24_sandbox_enabled" value="true" <?php echo is_sandbox_enabled('p24_sandbox_enabled', $current_settings) ? 'checked' : ''; ?>>
+                <strong>Aktywny Tryb Sandbox dla Przelewy24</strong>
+             </label>
+        </div>
+        <hr class="separator">
+        <div class="setting-group">
+             <h3>Środowisko Produkcyjne</h3>
+             <label for="production_p24_pos_id">Produkcyjny POS ID</label>
+             <input type="text" id="production_p24_pos_id" name="production_p24_pos_id" value="<?php echo get_current_setting_value('production_p24_pos_id', $current_settings); ?>">
+             <label for="production_p24_crc_key">Produkcyjny Klucz CRC</label>
+             <input type="text" id="production_p24_crc_key" name="production_p24_crc_key" value="<?php echo get_current_setting_value('production_p24_crc_key', $current_settings); ?>">
+             <label for="production_p24_api_key">Produkcyjny Klucz API (do raportów)</label>
+             <input type="text" id="production_p24_api_key" name="production_p24_api_key" value="<?php echo get_current_setting_value('production_p24_api_key', $current_settings); ?>" class="monospace">
+        </div>
+    </fieldset>
 
-    <details class="settings-card">
-        <summary>Ustawienia InPost API (ShipX + Geowidget)</summary>
-        <fieldset>
-            <legend>Ustawienia InPost API (ShipX + Geowidget)</legend>
-            <details class="settings-subcard" open>
-                <summary>Środowisko Sandbox (Testowe)</summary>
-                <div class="setting-group">
-                    <label for="sandbox_inpost_org_id">Sandbox ID Organizacji ShipX</label>
-                    <input type="text" id="sandbox_inpost_org_id" name="sandbox_inpost_org_id" value="<?php echo get_current_setting_value('sandbox_inpost_org_id', $current_settings); ?>">
-                    <label for="sandbox_inpost_token">Sandbox Token API ShipX (Bearer)</label>
-                    <textarea id="sandbox_inpost_token" name="sandbox_inpost_token" class="monospace token-area"><?php echo get_current_setting_value('sandbox_inpost_token', $current_settings); ?></textarea>
-                    <label for="sandbox_geowidget_token">Sandbox Token Geowidget</label>
-                    <textarea id="sandbox_geowidget_token" name="sandbox_geowidget_token" class="monospace token-area"><?php echo get_current_setting_value('sandbox_geowidget_token', $current_settings); ?></textarea>
-                    <label class="checkbox-label" for="inpost_sandbox_enabled">
-                        <input type="checkbox" id="inpost_sandbox_enabled" name="inpost_sandbox_enabled" value="true" <?php echo is_sandbox_enabled('inpost_sandbox_enabled', $current_settings) ? 'checked' : ''; ?>>
-                        <strong>Aktywny Tryb Sandbox dla InPost (ShipX + Geowidget)</strong>
-                    </label>
-                </div>
-            </details>
-            <details class="settings-subcard">
-                <summary>Środowisko Produkcyjne</summary>
-                <div class="setting-group">
-                    <label for="production_inpost_org_id">Produkcyjne ID Organizacji ShipX</label>
-                    <input type="text" id="production_inpost_org_id" name="production_inpost_org_id" value="<?php echo get_current_setting_value('production_inpost_org_id', $current_settings); ?>">
-                    <label for="production_inpost_token">Produkcyjny Token API ShipX (Bearer)</label>
-                    <textarea id="production_inpost_token" name="production_inpost_token" class="monospace token-area"><?php echo get_current_setting_value('production_inpost_token', $current_settings); ?></textarea>
-                    <label for="production_geowidget_token">Produkcyjny Token Geowidget</label>
-                    <textarea id="production_geowidget_token" name="production_geowidget_token" class="monospace token-area"><?php echo get_current_setting_value('production_geowidget_token', $current_settings); ?></textarea>
-                </div>
-            </details>
-        </fieldset>
-    </details>
+    <fieldset>
+        <legend>Ustawienia InPost API (ShipX + Geowidget)</legend>
+        <div class="setting-group">
+            <h3>Środowisko Sandbox (Testowe)</h3>
+            <label for="sandbox_inpost_org_id">Sandbox ID Organizacji ShipX</label>
+            <input type="text" id="sandbox_inpost_org_id" name="sandbox_inpost_org_id" value="<?php echo get_current_setting_value('sandbox_inpost_org_id', $current_settings); ?>">
+            <label for="sandbox_inpost_token">Sandbox Token API ShipX (Bearer)</label>
+            <textarea id="sandbox_inpost_token" name="sandbox_inpost_token" class="monospace token-area"><?php echo get_current_setting_value('sandbox_inpost_token', $current_settings); ?></textarea>
+             <!-- NOWE POLE -->
+             <label for="sandbox_geowidget_token">Sandbox Token Geowidget</label>
+            <textarea id="sandbox_geowidget_token" name="sandbox_geowidget_token" class="monospace token-area"><?php echo get_current_setting_value('sandbox_geowidget_token', $current_settings); ?></textarea>
+             <!-- ----------- -->
+             <label class="checkbox-label" for="inpost_sandbox_enabled">
+                <input type="checkbox" id="inpost_sandbox_enabled" name="inpost_sandbox_enabled" value="true" <?php echo is_sandbox_enabled('inpost_sandbox_enabled', $current_settings) ? 'checked' : ''; ?>>
+                <strong>Aktywny Tryb Sandbox dla InPost (ShipX + Geowidget)</strong>
+             </label>
+        </div>
+        <hr class="separator">
+        <div class="setting-group">
+             <h3>Środowisko Produkcyjne</h3>
+             <label for="production_inpost_org_id">Produkcyjne ID Organizacji ShipX</label>
+             <input type="text" id="production_inpost_org_id" name="production_inpost_org_id" value="<?php echo get_current_setting_value('production_inpost_org_id', $current_settings); ?>">
+             <label for="production_inpost_token">Produkcyjny Token API ShipX (Bearer)</label>
+             <textarea id="production_inpost_token" name="production_inpost_token" class="monospace token-area"><?php echo get_current_setting_value('production_inpost_token', $current_settings); ?></textarea>
+             <!-- NOWE POLE -->
+             <label for="production_geowidget_token">Produkcyjny Token Geowidget</label>
+            <textarea id="production_geowidget_token" name="production_geowidget_token" class="monospace token-area"><?php echo get_current_setting_value('production_geowidget_token', $current_settings); ?></textarea>
+             <!-- ----------- -->
+        </div>
+    </fieldset>
 
-    <details class="settings-card">
-        <summary>Ustawienia Przesyłki</summary>
-        <fieldset>
-            <legend>Ustawienia Przesyłki</legend>
-            <div class="setting-group">
-                <label for="large_parcel_surcharge">Dopłata za dużą paczkę (PLN)</label>
-                <input type="number" id="large_parcel_surcharge" name="large_parcel_surcharge" step="0.01" min="0.00" value="<?php echo get_current_setting_value('large_parcel_surcharge', $current_settings, '5.00'); ?>">
-                <small>Kwota dodawana do ceny usługi, gdy klient wybierze większy rozmiar paczki.</small>
-            </div>
-        </fieldset>
-    </details>
+     <fieldset>
+         <legend>Ustawienia Przesyłki</legend>
+          <div class="setting-group">
+             <!-- NOWE POLE -->
+             <label for="large_parcel_surcharge">Dopłata za dużą paczkę (PLN)</label>
+             <input type="number" id="large_parcel_surcharge" name="large_parcel_surcharge" step="0.01" min="0.00" value="<?php echo get_current_setting_value('large_parcel_surcharge', $current_settings, '5.00'); ?>">
+             <small>Kwota dodawana do ceny usługi, gdy klient wybierze większy rozmiar paczki.</small>
+             <!-- ----------- -->
+          </div>
+     </fieldset>
 
-    <details class="settings-card">
-        <summary>Dane Odbiorcy (Serwisu Naprawczego)</summary>
-        <fieldset>
-            <legend>Dane Odbiorcy (Serwisu Naprawczego)</legend>
-            <div class="setting-group">
-                <label for="service_receiver_name">Nazwa odbiorcy (na etykiecie)</label>
-                <input type="text" id="service_receiver_name" name="service_receiver_name" value="<?php echo get_current_setting_value('service_receiver_name', $current_settings); ?>" required>
-                <label for="service_receiver_email">E-mail odbiorcy</label>
-                <input type="email" id="service_receiver_email" name="service_receiver_email" value="<?php echo get_current_setting_value('service_receiver_email', $current_settings); ?>" required>
-                <label for="service_receiver_phone">Telefon odbiorcy</label>
-                <input type="tel" id="service_receiver_phone" name="service_receiver_phone" value="<?php echo get_current_setting_value('service_receiver_phone', $current_settings); ?>" required>
-                <label for="service_receiver_locker">Docelowy Paczkomat odbiorcy (ID)</label>
-                <input type="text" id="service_receiver_locker" name="service_receiver_locker" value="<?php echo get_current_setting_value('service_receiver_locker', $current_settings); ?>" required>
-            </div>
-        </fieldset>
-    </details>
+    <fieldset>
+        <legend>Dane Odbiorcy (Serwisu Naprawczego)</legend>
+        <div class="setting-group">
+             <label for="service_receiver_name">Nazwa odbiorcy (na etykiecie)</label>
+             <input type="text" id="service_receiver_name" name="service_receiver_name" value="<?php echo get_current_setting_value('service_receiver_name', $current_settings); ?>" required>
+             <label for="service_receiver_email">E-mail odbiorcy</label>
+             <input type="email" id="service_receiver_email" name="service_receiver_email" value="<?php echo get_current_setting_value('service_receiver_email', $current_settings); ?>" required>
+             <label for="service_receiver_phone">Telefon odbiorcy</label>
+             <input type="tel" id="service_receiver_phone" name="service_receiver_phone" value="<?php echo get_current_setting_value('service_receiver_phone', $current_settings); ?>" required>
+             <label for="service_receiver_locker">Docelowy Paczkomat odbiorcy (ID)</label>
+             <input type="text" id="service_receiver_locker" name="service_receiver_locker" value="<?php echo get_current_setting_value('service_receiver_locker', $current_settings); ?>" required>
+        </div>
+    </fieldset>
 
-    <details class="settings-card">
-        <summary>Ustawienia Nadawcy i E-mail</summary>
-        <fieldset>
-            <legend>Ustawienia Nadawcy i E-mail</legend>
-            <div class="setting-group">
-                <label for="sender_name_override">Nadpisz nazwę nadawcy na etykiecie InPost</label>
-                <input type="text" id="sender_name_override" name="sender_name_override" value="<?php echo get_current_setting_value('sender_name_override', $current_settings); ?>">
-                <small>Zostaw puste, aby użyć danych klienta.</small>
-                <label for="email_from_address">Adres e-mail "Od" (w powiadomieniach)</label>
-                <input type="email" id="email_from_address" name="email_from_address" value="<?php echo get_current_setting_value('email_from_address', $current_settings); ?>" required>
-                <label for="email_from_name">Nazwa nadawcy "Od" (w powiadomieniach)</label>
-                <input type="text" id="email_from_name" name="email_from_name" value="<?php echo get_current_setting_value('email_from_name', $current_settings); ?>" required>
-            </div>
-        </fieldset>
-    </details>
+     <fieldset>
+        <legend>Ustawienia Nadawcy i E-mail</legend>
+        <div class="setting-group">
+            <label for="sender_name_override">Nadpisz nazwę nadawcy na etykiecie InPost</label>
+            <input type="text" id="sender_name_override" name="sender_name_override" value="<?php echo get_current_setting_value('sender_name_override', $current_settings); ?>">
+            <small>Zostaw puste, aby użyć danych klienta.</small>
+            <label for="email_from_address">Adres e-mail "Od" (w powiadomieniach)</label>
+            <input type="email" id="email_from_address" name="email_from_address" value="<?php echo get_current_setting_value('email_from_address', $current_settings); ?>" required>
+            <label for="email_from_name">Nazwa nadawcy "Od" (w powiadomieniach)</label>
+            <input type="text" id="email_from_name" name="email_from_name" value="<?php echo get_current_setting_value('email_from_name', $current_settings); ?>" required>
+        </div>
+     </fieldset>
 
-    <details class="settings-card">
-        <summary>Domyślny szablon wyceny e-mail</summary>
-        <fieldset>
-            <legend>Domyślny szablon wyceny e-mail</legend>
-            <div class="setting-group">
-                <label for="global_quote_subject">Domyślny temat e-maila z wyceną</label>
-                <input type="text" id="global_quote_subject" name="global_quote_subject" value="<?php echo get_current_setting_value('global_quote_subject', $current_settings, htmlspecialchars($default_quote_subject)); ?>">
-                <label for="global_quote_body">Domyślna treść e-maila z wyceną</label>
-                <div class="editor-mode-switch quote-template-mode-switch" role="group" aria-label="Tryb edytora domyślnego szablonu e-mail">
-                    <button type="button" class="editor-mode-button is-active" data-template-editor-mode="visual" aria-pressed="true">Edytor wizualny</button>
-                    <button type="button" class="editor-mode-button" data-template-editor-mode="html" aria-pressed="false">HTML</button>
-                </div>
-                <div id="global_quote_body_visual_tools" class="visual-editor-toolbar" aria-label="Narzędzia edytora wizualnego szablonu">
-                    <button type="button" data-command="bold"><strong>B</strong></button>
-                    <button type="button" data-command="italic"><em>I</em></button>
-                    <button type="button" data-command="underline"><u>U</u></button>
-                    <button type="button" data-command="formatBlock" data-value="<h2>">Nagłówek</button>
-                    <button type="button" data-command="formatBlock" data-value="<p>">Akapit</button>
-                    <button type="button" data-command="insertUnorderedList">Lista</button>
-                    <button type="button" data-command="createLink">Link</button>
-                </div>
-                <div id="global_quote_body_visual_editor" class="visual-email-editor quote-template-visual-editor" contenteditable="true" aria-label="Wizualna treść domyślnego szablonu e-mail"></div>
-                <textarea id="global_quote_body" name="global_quote_body" class="monospace quote-template-area" aria-label="Domyślna treść e-maila z wyceną w HTML"><?php echo get_current_setting_value('global_quote_body', $current_settings, htmlspecialchars($default_quote_body)); ?></textarea>
-                <small>Domyślnie edytujesz szablon wizualnie. Przełącz na HTML, aby ręcznie poprawić znaczniki. Ten szablon jest używany dla nowych wycen i wysyłek bez zapisanej, indywidualnie edytowanej treści. Dostępne zmienne: <code>{{EMAIL_KLIENTA}}</code>, <code>{{NAZWA_USLUGI}}</code>, <code>{{CENA}}</code>, <code>{{LINK_DO_PLATNOSCI}}</code>.</small>
-            </div>
-        </fieldset>
-    </details>
+    <?php include 'includes/quote_template_settings.php'; ?>
 
     <button type="submit" class="button">Zapisz Ustawienia</button>
 </form>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const settingsForm = document.querySelector('.settings-form');
-
-    if (!settingsForm) {
-        return;
-    }
-
-    settingsForm.addEventListener('invalid', function (event) {
-        let panel = event.target.closest('details');
-
-        while (panel) {
-            panel.open = true;
-            panel = panel.parentElement.closest('details');
-        }
-    }, true);
-
-    const templateTextarea = document.getElementById('global_quote_body');
-    const templateVisualEditor = document.getElementById('global_quote_body_visual_editor');
-    const templateToolbar = document.getElementById('global_quote_body_visual_tools');
-    const templateModeButtons = document.querySelectorAll('[data-template-editor-mode]');
-
-    if (templateTextarea && templateVisualEditor && templateToolbar && templateModeButtons.length) {
-        let currentTemplateMode = 'html';
-
-        function htmlToTemplateVisual() {
-            templateVisualEditor.innerHTML = templateTextarea.value;
-        }
-
-        function templateVisualToHtml() {
-            templateTextarea.value = templateVisualEditor.innerHTML.trim();
-        }
-
-        function setTemplateEditorMode(mode) {
-            if (mode === currentTemplateMode) {
-                return;
-            }
-
-            if (mode === 'html') {
-                templateVisualToHtml();
-                templateVisualEditor.style.display = 'none';
-                templateToolbar.style.display = 'none';
-                templateTextarea.style.display = 'block';
-            } else {
-                htmlToTemplateVisual();
-                templateTextarea.style.display = 'none';
-                templateVisualEditor.style.display = 'block';
-                templateToolbar.style.display = 'flex';
-            }
-
-            currentTemplateMode = mode;
-
-            templateModeButtons.forEach(function (button) {
-                const isActive = button.dataset.templateEditorMode === mode;
-                button.classList.toggle('is-active', isActive);
-                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-            });
-        }
-
-        templateModeButtons.forEach(function (button) {
-            button.addEventListener('click', function () {
-                setTemplateEditorMode(button.dataset.templateEditorMode);
-            });
-        });
-
-        templateToolbar.addEventListener('click', function (event) {
-            const button = event.target.closest('button[data-command]');
-            if (!button) {
-                return;
-            }
-
-            const command = button.dataset.command;
-            let value = button.dataset.value || null;
-
-            if (command === 'createLink') {
-                value = window.prompt('Podaj adres linku:', 'https://');
-                if (!value) {
-                    return;
-                }
-            }
-
-            templateVisualEditor.focus();
-            document.execCommand(command, false, value);
-            templateVisualToHtml();
-        });
-
-        templateVisualEditor.addEventListener('input', templateVisualToHtml);
-        settingsForm.addEventListener('submit', function () {
-            if (currentTemplateMode === 'visual') {
-                templateVisualToHtml();
-            }
-        });
-
-        htmlToTemplateVisual();
-        setTemplateEditorMode('visual');
-    }
-});
-</script>
 
 <?php include 'includes/footer.php'; ?>
