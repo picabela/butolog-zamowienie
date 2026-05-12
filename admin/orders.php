@@ -49,8 +49,8 @@ try {
 <?php if (!empty($orders)): ?>
     
     <!-- === POPRAWKA RESPONSIVE: Dodano wrapper dla tabeli === -->
-    <div class="table-wrapper">
-        <table>
+    <div class="table-wrapper admin-table-wrapper orders-table-wrapper">
+        <table class="admin-compact-table orders-table">
             <thead>
                 <tr>
                     <th>ID Zam. (Session)</th>
@@ -67,15 +67,15 @@ try {
             <tbody>
                 <?php foreach ($orders as $order): ?>
                     <tr>
-                        <td style="word-break: break-all;"><?php echo htmlspecialchars($order['session_id']); ?></td>
-                        <td><?php echo date('Y-m-d H:i', strtotime($order['created_at'])); ?></td>
-                        <td>
+                        <td data-label="ID Zam. (Session)" style="word-break: break-all;"><?php echo htmlspecialchars($order['session_id']); ?></td>
+                        <td data-label="Data Utworzenia"><?php echo date('Y-m-d H:i', strtotime($order['created_at'])); ?></td>
+                        <td data-label="Klient">
                             <?php echo htmlspecialchars($order['sender_name']); ?><br>
                             <small><?php echo htmlspecialchars($order['sender_email']); ?></small>
                         </td>
-                        <td><?php echo htmlspecialchars($order['service_name'] ?? 'Usunięty formularz'); ?></td>
-                        <td style="text-align: right;"><?php echo number_format($order['amount'], 2, ',', ' '); ?> PLN</td>
-                        <td style="text-align: center;">
+                        <td data-label="Usługa"><?php echo htmlspecialchars($order['service_name'] ?? 'Usunięty formularz'); ?></td>
+                        <td data-label="Kwota" style="text-align: right;"><?php echo number_format($order['amount'], 2, ',', ' '); ?> PLN</td>
+                        <td data-label="Status Płatności" style="text-align: center;">
                             <?php 
                                 // Opcjonalne kolorowanie statusów
                                 $payment_status_color = 'inherit';
@@ -85,10 +85,10 @@ try {
                                 echo '<span style="color: ' . $payment_status_color . '; font-weight: bold;">' . htmlspecialchars(ucfirst($order['payment_status'])) . '</span>';
                             ?>
                         </td>
-                        <td style="text-align: center;">
+                        <td data-label="Status Naprawy" style="text-align: center;">
                             <?php echo htmlspecialchars(ucfirst($order['repair_status'])); ?>
                         </td>
-                        <td>
+                        <td data-label="Nr Przesyłki InPost">
                             <?php if (!empty($order['inpost_tracking_number'])): ?>
                                 <a href="https://inpost.pl/sledzenie-przesylek?number=<?php echo htmlspecialchars($order['inpost_tracking_number']); ?>" target="_blank">
                                     <?php echo htmlspecialchars($order['inpost_tracking_number']); ?>
@@ -97,7 +97,7 @@ try {
                                 -
                             <?php endif; ?>
                         </td>
-                        <td style="text-align: center; white-space: nowrap;">
+                        <td data-label="Akcje" style="text-align: center;">
                             <a href="view_order.php?id=<?php echo $order['id']; ?>" title="Zobacz szczegóły">👁️</a> |
                             <a href="edit_order_status.php?id=<?php echo $order['id']; ?>" title="Zmień status">✏️</a> |
                             

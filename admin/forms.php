@@ -120,8 +120,8 @@ try {
 <?php if (!empty($forms)): ?>
     
     <!-- === POPRAWKA RESPONSIVE: Dodano wrapper dla tabeli === -->
-    <div class="table-wrapper">
-        <table>
+    <div class="table-wrapper admin-table-wrapper forms-table-wrapper">
+        <table class="admin-compact-table forms-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -135,8 +135,8 @@ try {
             <tbody>
                 <?php foreach ($forms as $form): ?>
                     <tr>
-                        <td><?php echo $form['id']; ?></td>
-                        <td>
+                        <td data-label="ID"><?php echo $form['id']; ?></td>
+                        <td data-label="Link dla Klienta (UUID)">
                             <?php if ($form['is_active']): ?>
                                 <a href="../form.php?uuid=<?php echo htmlspecialchars($form['uuid']); ?>" target="_blank" title="Otwórz link publiczny">
                                     <?php echo htmlspecialchars($form['uuid']); ?>
@@ -145,10 +145,10 @@ try {
                                 <span title="Formularz nieaktywny"><?php echo htmlspecialchars($form['uuid']); ?></span>
                             <?php endif; ?>
                         </td>
-                        <td><?php echo htmlspecialchars($form['service_name']); ?></td>
-                        <td style="text-align: right;"><?php echo number_format($form['price'], 2, ',', ' '); ?> PLN</td>
-                        <td style="text-align: center;"><?php echo $form['is_active'] ? '✔️' : '❌'; ?></td>
-                        <td style="text-align: center; white-space: nowrap;">
+                        <td data-label="Nazwa Usługi"><?php echo htmlspecialchars($form['service_name']); ?></td>
+                        <td data-label="Cena" style="text-align: right;"><?php echo number_format($form['price'], 2, ',', ' '); ?> PLN</td>
+                        <td data-label="Aktywny" style="text-align: center;"><?php echo $form['is_active'] ? '✔️' : '❌'; ?></td>
+                        <td data-label="Akcje" style="text-align: center;">
                             
                             <!-- POPRAWKA: Link do edycji -->
                             <a href="edit_form.php?id=<?php echo $form['id']; ?>" title="Edytuj">✏️</a> |

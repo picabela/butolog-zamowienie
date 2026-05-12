@@ -11,7 +11,7 @@ require_once '../includes/functions.php';
 global $pdo;
 
 // Sprawdź, czy akcja została określona (przez POST lub GET)
-$action = $_POST['action'] ?? $_GET['action'] ?? null;
+$action = $_GET['action'] ?? $_POST['action'] ?? null;
 $request_method = $_SERVER['REQUEST_METHOD'];
 
 // Pobierz token CSRF (z POST lub GET)
@@ -33,7 +33,7 @@ try {
             if ($request_method !== 'POST') {
                 throw new Exception("Nieprawidłowa metoda żądania.");
             }
-            
+
             $form_uuid = isset($_POST['form_uuid']) ? trim($_POST['form_uuid']) : '';
             $client_email = filter_input(INPUT_POST, 'client_email', FILTER_VALIDATE_EMAIL);
 
@@ -56,7 +56,7 @@ try {
             // Wstaw nową wycenę do bazy ze statusem 'draft'
             // Treść i temat e-maila pozostają puste (NULL), aby edytor wczytał domyślny szablon
             $stmt_insert = $pdo->prepare(
-                "INSERT INTO quotes (uuid, form_id, client_email, status, created_at, updated_at) 
+                "INSERT INTO quotes (uuid, form_id, client_email, status, created_at, updated_at)
                  VALUES (?, ?, ?, 'draft', NOW(), NOW())"
             );
             $stmt_insert->execute([$quote_uuid, $form_id, $client_email]);
@@ -70,7 +70,7 @@ try {
             if ($request_method !== 'GET') {
                 throw new Exception("Nieprawidłowa metoda żądania.");
             }
-            
+
             $quote_uuid = $_GET['uuid'] ?? null;
             if (!$quote_uuid) {
                 throw new Exception("Brak UUID wyceny do usunięcia.");
@@ -101,12 +101,12 @@ try {
             if ($request_method === 'POST') {
                 // Dane pochodzą z formularza 'edit_quote.php' (przycisk "Zapisz i Wyślij")
                 log_message("Wysyłanie wyceny z formularza edycji (POST) dla UUID: {$quote_uuid}");
-                
+
                 // Najpierw zapisz zmiany
                 $client_email = filter_input(INPUT_POST, 'client_email', FILTER_VALIDATE_EMAIL);
                 $email_subject = isset($_POST['email_subject']) ? trim($_POST['email_subject']) : '';
                 $email_body = $_POST['email_body'] ?? '';
-                
+
                 // === POPRAWKA: ...chyba że checkbox jest ODZNACZONY ===
                 // Jeśli formularz jest wysłany (POST) i checkboxa NIE MA w danych (bo był odznaczony),
                 // to ustaw $send_copy na false.
@@ -123,12 +123,12 @@ try {
                 }
 
                 $stmt_update = $pdo->prepare(
-                    "UPDATE quotes SET client_email = ?, email_subject = ?, email_body = ? 
+                    "UPDATE quotes SET client_email = ?, email_subject = ?, email_body = ?
                      WHERE uuid = ?"
                 );
                 $stmt_update->execute([$client_email, $email_subject, $email_body, $quote_uuid]);
                 log_message("Zaktualizowano treść wyceny {$quote_uuid} przed wysłaniem.");
-                
+
             } else {
                 // Dane pochodzą z linku "Wyślij" na liście 'quotes.php' (GET)
                 log_message("Wysyłanie wyceny z listy (GET) dla UUID: {$quote_uuid}");
@@ -137,7 +137,7 @@ try {
 
             // Pobierz pełne dane wyceny (zaktualizowane lub z bazy)
             $stmt_get = $pdo->prepare(
-                "SELECT q.*, f.service_name, f.price, f.uuid as form_uuid 
+                "SELECT q.*, f.service_name, f.price, f.uuid as form_uuid
                  FROM quotes q
                  LEFT JOIN forms f ON q.form_id = f.id
                  WHERE q.uuid = ?"
@@ -163,18 +163,18 @@ try {
             if (empty($email_subject)) {
                  $email_subject = get_setting('global_quote_subject', $pdo, false);
             }
-            
-            if (empty($email_subject)) $email_subject = "Wycena naprawy - BUTOLOG";
-            if (empty($email_body_html)) $email_body_html = "Wystąpił błąd ładowania szablonu. Link do płatności: {{LINK_DO_PLATNOSCI}}";
+
+            if (empty($email_subject)) $email_subject = get_default_quote_subject();
+            if (empty($email_body_html)) $email_body_html = get_default_quote_body();
 
             // --- Zastępowanie zmiennych w treści i temacie ---
             $link_do_platnosci = "https://butolog.pl/zamowienie/form.php?uuid=" . htmlspecialchars($quote['form_uuid']);
-            
+
             $vars_to_replace = [
                 '{{EMAIL_KLIENTA}}' => $client_email,
                 '{{NAZWA_USLUGI}}' => htmlspecialchars($quote['service_name']),
                 '{{CENA}}' => number_format($quote['price'], 2, ',', ' ') . " PLN",
-                '{{LINK_DO_PLATNOSCI}}' => $link_do_platnosci 
+                '{{LINK_DO_PLATNOSCI}}' => $link_do_platnosci
             ];
 
             $final_subject = $email_subject;
@@ -196,20 +196,20 @@ try {
             $headers .= "Reply-To: {$email_from_address}\r\n";
             $headers .= "MIME-Version: 1.0\r\n";
             $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-            $headers .= "X-Mailer: PHP/" . phpversion();
 
-            // === POPRAWKA 3: Dodaj kopię (Bcc), jeśli $send_copy jest true ===
+            // === POPRAWKA 3: Dodaj kopię (Cc), jeśli $send_copy jest true ===
             if ($send_copy) {
                 $service_receiver_email = get_setting('service_receiver_email', $pdo, false);
                 if (!empty($service_receiver_email)) {
-                    $headers .= "Bcc: {$service_receiver_email}\r\n"; // Użyj Bcc (kopia ukryta)
-                    log_message("Wysyłanie kopii Bcc do: {$service_receiver_email}");
+                    $headers .= "Cc: {$service_receiver_email}\r\n"; // Użyj Cc (DW)
+                    log_message("Wysyłanie kopii Cc do: {$service_receiver_email}");
                 } else {
                      log_message("Ostrzeżenie: Chciano wysłać kopię (domyślnie lub z POST), ale 'service_receiver_email' nie jest ustawiony.");
                 }
             } else {
                  log_message("Wysyłanie bez kopii (checkbox był odznaczony w formularzu POST).");
             }
+            $headers .= "X-Mailer: PHP/" . phpversion();
             // =================================================================
 
             if (mail($client_email, $final_subject, $final_body, $headers)) {
@@ -220,7 +220,7 @@ try {
             } else {
                 throw new Exception("Funkcja mail() nie powiodła się. E-mail nie został wysłany. Sprawdź konfigurację serwera pocztowego.");
             }
-            
+
             header("Location: quotes.php");
             exit;
 
