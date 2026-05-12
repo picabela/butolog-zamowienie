@@ -30,6 +30,23 @@ function log_message($message) {
     file_put_contents($log_file, date('Y-m-d H:i:s') . ' - ' . $message . "\n", FILE_APPEND | LOCK_EX);
 }
 
+
+/**
+ * Domyślny temat wiadomości z wyceną.
+ */
+function get_default_quote_subject(): string
+{
+    return 'Wycena naprawy';
+}
+
+/**
+ * Domyślny szablon HTML wiadomości z wyceną.
+ */
+function get_default_quote_body(): string
+{
+    return '<h1>Wycena naprawy</h1><p>Usługa: {{NAZWA_USLUGI}}</p><p>Cena: {{CENA}}</p><p>Link: {{LINK_DO_PLATNOSCI}}</p>';
+}
+
 /**
  * Pobiera pojedyncze ustawienie z bazy danych.
  * @param string $key Klucz ustawienia.
@@ -75,7 +92,7 @@ function get_setting(string $key, PDO $pdo_conn, bool $treat_as_boolean = true)
 function get_active_setting(string $base_key, PDO $pdo_conn): ?string
 {
     $sandbox_enabled = false;
-    $is_mode_dependent = false; 
+    $is_mode_dependent = false;
 
     if (str_starts_with($base_key, 'p24_')) {
         $sandbox_enabled = get_setting('p24_sandbox_enabled', $pdo_conn);
@@ -95,7 +112,7 @@ function get_active_setting(string $base_key, PDO $pdo_conn): ?string
     }
 
     $prefix = $sandbox_enabled ? 'sandbox_' : 'production_';
-   
+
      if($base_key === 'geowidget_token'){
          $active_key = $prefix . 'geowidget_token';
      } else if (str_starts_with($base_key, 'inpost_')) {
@@ -140,12 +157,12 @@ function get_current_setting_value(string $key, array $settings_array, string $d
  */
 function is_sandbox_enabled(string $key, array $settings_array): bool
 {
-    global $pdo; 
+    global $pdo;
     if (!$pdo) {
          error_log("Błąd w is_sandbox_enabled: Brak globalnego obiektu PDO.");
-         return false; 
+         return false;
     }
-    $value_from_db = get_setting($key, $pdo); 
+    $value_from_db = get_setting($key, $pdo);
     return $value_from_db === true;
 }
 
@@ -163,9 +180,9 @@ function call_p24_api($url, $posId, $apiKey, $payload = [], $method = 'POST') {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
         CURLOPT_USERPWD => $posId . ":" . $apiKey, // Basic Auth
-        CURLOPT_SSL_VERIFYPEER => false, 
-        CURLOPT_SSL_VERIFYHOST => false, 
-        CURLOPT_TIMEOUT => 45, 
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => false,
+        CURLOPT_TIMEOUT => 45,
         CURLOPT_CONNECTTIMEOUT => 15,
     ];
 
@@ -178,7 +195,7 @@ function call_p24_api($url, $posId, $apiKey, $payload = [], $method = 'POST') {
     }
 
     curl_setopt_array($ch, $options);
-    
+
     // === DODANE LOGOWANIE DLA AUTORYZACJI ===
     if (function_exists('log_message')) { // Sprawdź czy funkcja log_message istnieje
          log_message("call_p24_api: Używam Basic Auth: User=[" . $posId . "] Key=[" . substr($apiKey, 0, 5) . "...(pełny klucz ma " . strlen($apiKey) . " znaków)]");
@@ -223,8 +240,8 @@ function call_inpost_api_post($url, $token, $payload) {
             'Accept: application/json',
             'Authorization: Bearer ' . $token
         ],
-        CURLOPT_SSL_VERIFYPEER => false, 
-        CURLOPT_SSL_VERIFYHOST => false, 
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_TIMEOUT => 45,
         CURLOPT_CONNECTTIMEOUT => 15,
     ]);
@@ -262,8 +279,8 @@ function call_inpost_api_get($url, $token) {
             'Accept: application/json',
             'Authorization: Bearer ' . $token
         ],
-        CURLOPT_SSL_VERIFYPEER => false, 
-        CURLOPT_SSL_VERIFYHOST => false, 
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_TIMEOUT => 45,
         CURLOPT_CONNECTTIMEOUT => 15,
     ]);

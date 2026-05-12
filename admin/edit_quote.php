@@ -43,16 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             try {
                 // Zaktualizuj wycenę w bazie i oznacz jako 'draft' (bo została zmodyfikowana)
                 $stmt = $pdo->prepare(
-                    "UPDATE quotes SET client_email = ?, email_subject = ?, email_body = ?, status = 'draft', updated_at = NOW() 
+                    "UPDATE quotes SET client_email = ?, email_subject = ?, email_body = ?, status = 'draft', updated_at = NOW()
                      WHERE uuid = ?"
                 );
                 $stmt->execute([$client_email, $email_subject, $email_body, $quote_uuid]);
-                
+
                 // Użyj $_SESSION, ponieważ zaraz będzie przekierowanie
                 $_SESSION['success_message'] = "Wycena została pomyślnie zaktualizowana i oznaczona jako 'Szkic'.";
                 header("Location: quotes.php"); // Wróć do listy wycen
                 exit;
-                
+
             } catch (\PDOException $e) {
                 error_log("DB Error updating quote {$quote_uuid}: " . $e->getMessage());
                 $error_message = "Wystąpił błąd serwera podczas aktualizacji wyceny.";
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 try {
     // Pobierz dane wyceny ORAZ formularza (cenę, nazwę usługi, UUID formularza)
     $stmt_get = $pdo->prepare(
-        "SELECT q.*, f.service_name, f.price, f.uuid as form_uuid 
+        "SELECT q.*, f.service_name, f.price, f.uuid as form_uuid
          FROM quotes q
          LEFT JOIN forms f ON q.form_id = f.id
          WHERE q.uuid = ?"
@@ -87,11 +87,11 @@ try {
             // Pobierz domyślny szablon z bazy danych
             $email_body_to_show = get_setting('global_quote_body', $pdo);
             $email_subject_to_show = get_setting('global_quote_subject', $pdo); // Pobierz też domyślny temat
-            
+
             // Jeśli nadal pusty (np. błąd SQL), użyj ostatecznego fallbacku
             if (empty($email_body_to_show)) {
-                $email_body_to_show = "<h1>Wycena naprawy</h1><p>Usługa: {{NAZWA_USLUGI}}</p><p>Cena: {{CENA}}</p><p>Link: {{LINK_DO_PLATNOSCI}}</p>";
-                $email_subject_to_show = "Wycena naprawy";
+                $email_body_to_show = get_default_quote_body();
+                $email_subject_to_show = get_default_quote_subject();
             }
         }
     }
@@ -149,8 +149,8 @@ try {
             </label>
 
             <button type="submit" class="button">Zapisz jako Szkic</button>
-            
-            <button type="submit" formaction="handle_quote_action.php?action=send_quote&uuid=<?php echo htmlspecialchars($quote_uuid); ?>&token=<?php echo $csrf_token; ?>" 
+
+            <button type="submit" name="action" value="send_quote" formaction="handle_quote_action.php?action=send_quote&uuid=<?php echo htmlspecialchars($quote_uuid); ?>&token=<?php echo $csrf_token; ?>"
                     onclick="return confirm('Czy na pewno chcesz ZAPISAĆ i WYSŁAĆ tę wycenę do klienta <?php echo htmlspecialchars($quote['client_email']); ?>?');"
                     class="button send-button">
                 Zapisz i Wyślij
@@ -162,19 +162,19 @@ try {
     <aside class="email-editor-sidebar">
         <h4>Dostępne Zmienne</h4>
         <p>Użyj poniższych zmiennych w temacie lub treści e-maila. Zostaną one automatycznie podmienione przed wysyłką.</p>
-        
+
         <p><code>{{EMAIL_KLIENTA}}</code><br>
         Adres e-mail klienta (z pola powyżej).</p>
-        
+
         <p><code>{{NAZWA_USLUGI}}</code><br>
         Nazwa usługi powiązana z tą wyceną (<?php echo htmlspecialchars($quote['service_name']); ?>).</p>
-        
+
         <p><code>{{CENA}}</code><br>
         Cena usługi (<?php echo number_format($quote['price'], 2, ',', ' '); ?> PLN).</p>
 
         <p><code>{{LINK_DO_PLATNOSCI}}</code><br>
         Unikalny link do formularza płatności (z `form.php?uuid=...` powiązanego formularza).</p>
-        
+
         <h4>Opis usługi</h4>
         <p style="font-size: 0.9em; color: #555;">W skład usługi wchodzi: naprawa, wysyłka do serwisu, odesłanie gotowej naprawy, opłata operacyjna.</p>
 
