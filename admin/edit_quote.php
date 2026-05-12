@@ -43,16 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             try {
                 // Zaktualizuj wycenę w bazie i oznacz jako 'draft' (bo została zmodyfikowana)
                 $stmt = $pdo->prepare(
-                    "UPDATE quotes SET client_email = ?, email_subject = ?, email_body = ?, status = 'draft', updated_at = NOW() 
+                    "UPDATE quotes SET client_email = ?, email_subject = ?, email_body = ?, status = 'draft', updated_at = NOW()
                      WHERE uuid = ?"
                 );
                 $stmt->execute([$client_email, $email_subject, $email_body, $quote_uuid]);
-                
+
                 // Użyj $_SESSION, ponieważ zaraz będzie przekierowanie
                 $_SESSION['success_message'] = "Wycena została pomyślnie zaktualizowana i oznaczona jako 'Szkic'.";
                 header("Location: quotes.php"); // Wróć do listy wycen
                 exit;
-                
+
             } catch (\PDOException $e) {
                 error_log("DB Error updating quote {$quote_uuid}: " . $e->getMessage());
                 $error_message = "Wystąpił błąd serwera podczas aktualizacji wyceny.";
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 try {
     // Pobierz dane wyceny ORAZ formularza (cenę, nazwę usługi, UUID formularza)
     $stmt_get = $pdo->prepare(
-        "SELECT q.*, f.service_name, f.price, f.uuid as form_uuid 
+        "SELECT q.*, f.service_name, f.price, f.uuid as form_uuid
          FROM quotes q
          LEFT JOIN forms f ON q.form_id = f.id
          WHERE q.uuid = ?"
@@ -87,11 +87,11 @@ try {
             // Pobierz domyślny szablon z bazy danych
             $email_body_to_show = get_setting('global_quote_body', $pdo);
             $email_subject_to_show = get_setting('global_quote_subject', $pdo); // Pobierz też domyślny temat
-            
+
             // Jeśli nadal pusty (np. błąd SQL), użyj ostatecznego fallbacku
             if (empty($email_body_to_show)) {
-                $email_body_to_show = "<h1>Wycena naprawy</h1><p>Usługa: {{NAZWA_USLUGI}}</p><p>Cena: {{CENA}}</p><p>Link: {{LINK_DO_PLATNOSCI}}</p>";
-                $email_subject_to_show = "Wycena naprawy";
+                $email_body_to_show = get_default_quote_body();
+                $email_subject_to_show = get_default_quote_subject();
             }
         }
     }
@@ -124,8 +124,23 @@ try {
                     <label for="email_subject">Temat E-maila *</label>
                     <input type="text" id="email_subject" name="email_subject" value="<?php echo htmlspecialchars($email_subject_to_show); ?>" required>
 
-                    <label for="email_body">Treść E-maila (HTML)</label>
-                    <textarea id="email_body" name="email_body"><?php echo htmlspecialchars($email_body_to_show); ?></textarea>
+                    <label for="email_body">Treść E-maila</label>
+                    <div class="editor-mode-switch" role="group" aria-label="Tryb edytora wiadomości e-mail">
+                        <button type="button" class="editor-mode-button is-active" data-editor-mode="visual" aria-pressed="true">Edytor wizualny</button>
+                        <button type="button" class="editor-mode-button" data-editor-mode="html" aria-pressed="false">HTML</button>
+                    </div>
+                    <div id="email_visual_tools" class="visual-editor-toolbar" aria-label="Narzędzia edytora wizualnego">
+                        <button type="button" data-command="bold"><strong>B</strong></button>
+                        <button type="button" data-command="italic"><em>I</em></button>
+                        <button type="button" data-command="underline"><u>U</u></button>
+                        <button type="button" data-command="formatBlock" data-value="<h2>">Nagłówek</button>
+                        <button type="button" data-command="formatBlock" data-value="<p>">Akapit</button>
+                        <button type="button" data-command="insertUnorderedList">Lista</button>
+                        <button type="button" data-command="createLink">Link</button>
+                    </div>
+                    <div id="email_visual_editor" class="visual-email-editor" contenteditable="true" aria-label="Wizualna treść e-maila"></div>
+                    <textarea id="email_body" name="email_body" class="html-email-editor" aria-label="Treść E-maila w HTML"><?php echo htmlspecialchars($email_body_to_show); ?></textarea>
+                    <small>Domyślnie edytujesz wiadomość wizualnie. Przełącz na HTML, aby ręcznie poprawić znaczniki.</small>
                 </div>
             </fieldset>
 
@@ -134,8 +149,8 @@ try {
             </label>
 
             <button type="submit" class="button">Zapisz jako Szkic</button>
-            
-            <button type="submit" formaction="handle_quote_action.php?action=send_quote&uuid=<?php echo htmlspecialchars($quote_uuid); ?>&token=<?php echo $csrf_token; ?>" 
+
+            <button type="submit" name="action" value="send_quote" formaction="handle_quote_action.php?action=send_quote&uuid=<?php echo htmlspecialchars($quote_uuid); ?>&token=<?php echo $csrf_token; ?>"
                     onclick="return confirm('Czy na pewno chcesz ZAPISAĆ i WYSŁAĆ tę wycenę do klienta <?php echo htmlspecialchars($quote['client_email']); ?>?');"
                     class="button send-button">
                 Zapisz i Wyślij
@@ -147,19 +162,19 @@ try {
     <aside class="email-editor-sidebar">
         <h4>Dostępne Zmienne</h4>
         <p>Użyj poniższych zmiennych w temacie lub treści e-maila. Zostaną one automatycznie podmienione przed wysyłką.</p>
-        
+
         <p><code>{{EMAIL_KLIENTA}}</code><br>
         Adres e-mail klienta (z pola powyżej).</p>
-        
+
         <p><code>{{NAZWA_USLUGI}}</code><br>
         Nazwa usługi powiązana z tą wyceną (<?php echo htmlspecialchars($quote['service_name']); ?>).</p>
-        
+
         <p><code>{{CENA}}</code><br>
         Cena usługi (<?php echo number_format($quote['price'], 2, ',', ' '); ?> PLN).</p>
 
         <p><code>{{LINK_DO_PLATNOSCI}}</code><br>
         Unikalny link do formularza płatności (z `form.php?uuid=...` powiązanego formularza).</p>
-        
+
         <h4>Opis usługi</h4>
         <p style="font-size: 0.9em; color: #555;">W skład usługi wchodzi: naprawa, wysyłka do serwisu, odesłanie gotowej naprawy, opłata operacyjna.</p>
 
@@ -168,6 +183,93 @@ try {
 <?php elseif (empty($error_message)): // Jeśli $quote jest puste, ale nie było błędu ?>
     <div class="error-message">Nie można załadować danych wyceny.</div>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const textarea = document.getElementById('email_body');
+    const visualEditor = document.getElementById('email_visual_editor');
+    const toolbar = document.getElementById('email_visual_tools');
+    const modeButtons = document.querySelectorAll('[data-editor-mode]');
+    const quoteForm = document.querySelector('.email-editor-main form');
+
+    if (!textarea || !visualEditor || !toolbar || !quoteForm) {
+        return;
+    }
+
+    let currentMode = 'html';
+
+    function htmlToVisual() {
+        visualEditor.innerHTML = textarea.value;
+    }
+
+    function visualToHtml() {
+        textarea.value = visualEditor.innerHTML.trim();
+    }
+
+    function setEditorMode(mode) {
+        if (mode === currentMode) {
+            return;
+        }
+
+        if (mode === 'html') {
+            visualToHtml();
+            visualEditor.style.display = 'none';
+            toolbar.style.display = 'none';
+            textarea.style.display = 'block';
+        } else {
+            htmlToVisual();
+            textarea.style.display = 'none';
+            visualEditor.style.display = 'block';
+            toolbar.style.display = 'flex';
+        }
+
+        currentMode = mode;
+
+        modeButtons.forEach(function (button) {
+            const isActive = button.dataset.editorMode === mode;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+    }
+
+    modeButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            setEditorMode(button.dataset.editorMode);
+        });
+    });
+
+    toolbar.addEventListener('click', function (event) {
+        const button = event.target.closest('button[data-command]');
+        if (!button) {
+            return;
+        }
+
+        const command = button.dataset.command;
+        let value = button.dataset.value || null;
+
+        if (command === 'createLink') {
+            value = window.prompt('Podaj adres linku:', 'https://');
+            if (!value) {
+                return;
+            }
+        }
+
+        visualEditor.focus();
+        document.execCommand(command, false, value);
+        visualToHtml();
+    });
+
+    visualEditor.addEventListener('input', visualToHtml);
+    quoteForm.addEventListener('submit', function () {
+        if (currentMode === 'visual') {
+            visualToHtml();
+        }
+    });
+
+    htmlToVisual();
+    setEditorMode('visual');
+});
+</script>
 
 <?php
 include 'includes/footer.php';

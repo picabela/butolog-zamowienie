@@ -529,3 +529,141 @@ td a.action-send:hover {
          margin-bottom: 20px;
     }
 }
+/* Przełączany edytor treści e-maila (wizualny / HTML) */
+.editor-mode-switch {
+    display: inline-flex;
+    gap: 0;
+    margin: 8px 0 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.editor-mode-switch .editor-mode-button {
+    margin: 0;
+    border-radius: 0;
+    background: #fff;
+    color: var(--primary-color);
+    border-right: 1px solid var(--border-color);
+    box-shadow: none;
+    width: auto;
+}
+
+.editor-mode-switch .editor-mode-button:last-child {
+    border-right: none;
+}
+
+.editor-mode-switch .editor-mode-button.is-active {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.visual-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    background: #efebe9;
+}
+
+.visual-editor-toolbar button {
+    width: auto;
+    margin: 0;
+    padding: 6px 10px;
+    background: #fff;
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+    font-size: 0.95em;
+}
+
+.visual-editor-toolbar button:hover {
+    background: var(--light-bg);
+    box-shadow: none;
+}
+
+.visual-email-editor {
+    min-height: 400px;
+    padding: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 0 0 5px 5px;
+    background: #fff;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.visual-email-editor:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.15);
+}
+
+.visual-email-editor:empty::before {
+    content: "Wpisz treść wiadomości e-mail...";
+    color: #999;
+}
+
+/* Rozwijane kafelki ustawień */
+.settings-card,
+.settings-subcard {
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.settings-card > summary,
+.settings-subcard > summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    color: var(--primary-color);
+    font-weight: 700;
+    background: #efebe9;
+    list-style: none;
+}
+
+.settings-card > summary::-webkit-details-marker,
+.settings-subcard > summary::-webkit-details-marker {
+    display: none;
+}
+
+.settings-card > summary::after,
+.settings-subcard > summary::after {
+    content: "+";
+    float: right;
+    font-weight: 700;
+}
+
+.settings-card[open] > summary::after,
+.settings-subcard[open] > summary::after {
+    content: "−";
+}
+
+.settings-card > fieldset {
+    margin: 0;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    border-radius: 0;
+}
+
+.settings-subcard {
+    margin: 14px 0;
+}
+
+.settings-subcard > summary {
+    padding: 10px 14px;
+    background: var(--light-bg);
+}
+
+.settings-subcard .setting-group {
+    padding: 0 14px 14px;
+}
+
+.quote-template-area {
+    min-height: 220px;
+}
