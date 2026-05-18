@@ -1,0 +1,45 @@
+name: Daily SEO/GEO News Collector
+
+on:
+  schedule:
+    # 06:00 UTC = 08:00 Europe/Warsaw (CEST, lato)
+    # Zimą (CET, UTC+1) odpali się o 07:00 PL — w razie potrzeby zmień na '0 7 * * *'
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  collect-news:
+    name: Collect SEO/GEO news and upload to Google Drive
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Claude Code with daily news prompt
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt_file: .github/prompts/daily-seo-geo-news.md
+          allowed_tools: >-
+            WebSearch,WebFetch,
+            mcp__gdrive__create_file,
+            mcp__gdrive__search_files,
+            mcp__gdrive__list_recent_files,
+            mcp__gdrive__read_file_content
+          mcp_config: |
+            {
+              "mcpServers": {
+                "gdrive": {
+                  "command": "npx",
+                  "args": ["-y", "@modelcontextprotocol/server-gdrive"],
+                  "env": {
+                    "GDRIVE_CREDENTIALS": "${{ secrets.GDRIVE_CREDENTIALS }}"
+                  }
+                }
+              }
+            }
