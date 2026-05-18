@@ -206,21 +206,8 @@ $default_quote_body = get_default_quote_body();
 
     <details class="settings-card">
         <summary>Domyślny szablon wyceny e-mail</summary>
-        <fieldset>
-            <legend>Domyślny szablon wyceny e-mail</legend>
-            <div class="setting-group">
-                <label for="global_quote_subject">Domyślny temat e-maila z wyceną</label>
-                <input type="text" id="global_quote_subject" name="global_quote_subject" value="<?php echo get_current_setting_value('global_quote_subject', $current_settings, htmlspecialchars($default_quote_subject)); ?>">
-                <label for="global_quote_body">Domyślna treść e-maila z wyceną (HTML)</label>
-                <textarea id="global_quote_body" name="global_quote_body" class="monospace quote-template-area"><?php echo get_current_setting_value('global_quote_body', $current_settings, htmlspecialchars($default_quote_body)); ?></textarea>
-                <small>Ten szablon jest używany dla nowych wycen i wysyłek bez zapisanej, indywidualnie edytowanej treści. Dostępne zmienne: <code>{{EMAIL_KLIENTA}}</code>, <code>{{NAZWA_USLUGI}}</code>, <code>{{CENA}}</code>, <code>{{LINK_DO_PLATNOSCI}}</code>.</small>
-            </div>
-        </fieldset>
+        <?php include 'includes/quote_template_settings.php'; ?>
     </details>
-
-    <?php include 'includes/quote_template_settings.php'; ?>
-
-    <?php include 'includes/quote_template_settings.php'; ?>
 
     <button type="submit" class="button">Zapisz Ustawienia</button>
 </form>
