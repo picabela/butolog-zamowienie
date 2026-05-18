@@ -3,8 +3,8 @@
 
 // --- DANE DOSTĘPOWE DO BAZY DANYCH ---
 define('DB_HOST', 'localhost'); // Zazwyczaj localhost, chyba że masz inaczej
-define('DB_NAME', 'host322698_butolog_zamowienie_demo');
-define('DB_USER', 'host322698_butolog_zamowienie_demo');
+define('DB_NAME', 'host322698_butolog_zamowienie');
+define('DB_USER', 'host322698_butolog_zamowienie');
 define('DB_PASS', 'ZhJakULAcUjm5WurBA2v');
 define('DB_CHARSET', 'utf8mb4');
 // ------------------------------------
