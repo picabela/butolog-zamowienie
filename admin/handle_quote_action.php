@@ -192,16 +192,11 @@ try {
                 throw new Exception("Brak skonfigurowanego adresu 'Od' lub nazwy nadawcy w Ustawieniach.");
             }
 
-            $headers = "From: {$email_from_name} <{$email_from_address}>\r\n";
-            $headers .= "Reply-To: {$email_from_address}\r\n";
-            $headers .= "MIME-Version: 1.0\r\n";
-            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-
-            // === POPRAWKA 3: Dodaj kopię (Cc), jeśli $send_copy jest true ===
+            $cc_address = '';
             if ($send_copy) {
                 $service_receiver_email = get_setting('service_receiver_email', $pdo, false);
                 if (!empty($service_receiver_email)) {
-                    $headers .= "Cc: {$service_receiver_email}\r\n"; // Użyj Cc (DW)
+                    $cc_address = $service_receiver_email;
                     log_message("Wysyłanie kopii Cc do: {$service_receiver_email}");
                 } else {
                      log_message("Ostrzeżenie: Chciano wysłać kopię (domyślnie lub z POST), ale 'service_receiver_email' nie jest ustawiony.");
@@ -209,16 +204,14 @@ try {
             } else {
                  log_message("Wysyłanie bez kopii (checkbox był odznaczony w formularzu POST).");
             }
-            $headers .= "X-Mailer: PHP/" . phpversion();
-            // =================================================================
 
-            if (mail($client_email, $final_subject, $final_body, $headers)) {
+            if (send_email_html($client_email, $final_subject, $final_body, $email_from_name, $email_from_address, $email_from_address, $cc_address)) {
                 // Sukces wysyłki - zaktualizuj status w bazie
                 $stmt_sent = $pdo->prepare("UPDATE quotes SET status = 'sent', updated_at = NOW() WHERE uuid = ?");
                 $stmt_sent->execute([$quote_uuid]);
                 $_SESSION['success_message'] = "Wycena została pomyślnie wysłana do " . htmlspecialchars($client_email);
             } else {
-                throw new Exception("Funkcja mail() nie powiodła się. E-mail nie został wysłany. Sprawdź konfigurację serwera pocztowego.");
+                throw new Exception("Wysyłka e-maila nie powiodła się. Sprawdź konfigurację SMTP w ustawieniach lub log błędów.");
             }
 
             header("Location: quotes.php");

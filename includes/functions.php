@@ -1,6 +1,10 @@
 <?php
 // /zamowienie/includes/functions.php
 require_once __DIR__ . '/db.php'; // Upewnij się, że db.php jest załadowany
+require_once __DIR__ . '/../vendor/autoload.php'; // PHPMailer
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
 
 /**
  * Generuje unikalny identyfikator UUID v4.
@@ -97,8 +101,11 @@ function get_active_setting(string $base_key, PDO $pdo_conn): ?string
     if (str_starts_with($base_key, 'p24_')) {
         $sandbox_enabled = get_setting('p24_sandbox_enabled', $pdo_conn);
         $is_mode_dependent = true;
-    } elseif (str_starts_with($base_key, 'inpost_') || $base_key === 'geowidget_token') {
+    } elseif (str_starts_with($base_key, 'inpost_') || $base_key === 'geowidget_token' || $base_key === 'service_receiver_locker') {
         $sandbox_enabled = get_setting('inpost_sandbox_enabled', $pdo_conn);
+        $is_mode_dependent = true;
+    } elseif (str_starts_with($base_key, 'smtp_')) {
+        $sandbox_enabled = get_setting('p24_sandbox_enabled', $pdo_conn);
         $is_mode_dependent = true;
     }
 
@@ -115,6 +122,11 @@ function get_active_setting(string $base_key, PDO $pdo_conn): ?string
 
      if($base_key === 'geowidget_token'){
          $active_key = $prefix . 'geowidget_token';
+     } else if ($base_key === 'service_receiver_locker') {
+          $active_key = $prefix . 'service_receiver_locker';
+     } else if (str_starts_with($base_key, 'smtp_')) {
+          $key_without_prefix = preg_replace('/^(sandbox_|production_|smtp_)/', '', $base_key);
+          $active_key = $prefix . 'smtp_' . $key_without_prefix;
      } else if (str_starts_with($base_key, 'inpost_')) {
           $key_without_prefix = preg_replace('/^(sandbox_|production_|inpost_)/', '', $base_key);
           $active_key = $prefix . 'inpost_' . $key_without_prefix;
@@ -166,6 +178,100 @@ function is_sandbox_enabled(string $key, array $settings_array): bool
     return $value_from_db === true;
 }
 
+
+/**
+ * Wysyła wiadomość HTML przez PHPMailer.
+ * Jeśli skonfigurowano SMTP w panelu admina – używa SMTP (z twardym timeoutem).
+ * W przeciwnym razie – używa wbudowanej funkcji mail() (przez PHPMailer, z lepszymi nagłówkami).
+ *
+ * @param string $to Adres odbiorcy.
+ * @param string $subject Temat (zostanie zakodowany UTF-8).
+ * @param string $html Treść HTML.
+ * @param string $from_name Nazwa nadawcy w polu From.
+ * @param string $from_address Adres nadawcy w polu From.
+ * @param string $reply_to Opcjonalny Reply-To.
+ * @return bool true gdy wysyłka się powiodła.
+ */
+function send_email_html(string $to, string $subject, string $html, string $from_name, string $from_address, string $reply_to = '', string $cc = ''): bool
+{
+    global $pdo;
+    $mail = new PHPMailer(true);
+    try {
+        $mail->CharSet = PHPMailer::CHARSET_UTF8;
+        $mail->Encoding = PHPMailer::ENCODING_BASE64;
+        $mail->Timeout = 15;
+
+        if ($pdo instanceof PDO) {
+            $smtp_host = get_active_setting('smtp_host', $pdo);
+            if (!empty($smtp_host)) {
+                $smtp_port = (int) (get_active_setting('smtp_port', $pdo) ?: 587);
+                $smtp_user = get_active_setting('smtp_user', $pdo);
+                $smtp_pass = get_active_setting('smtp_password', $pdo);
+                $smtp_enc = strtolower((string) get_active_setting('smtp_encryption', $pdo));
+
+                $mail->isSMTP();
+                $mail->Host = $smtp_host;
+                $mail->Port = $smtp_port;
+                if (!empty($smtp_user)) {
+                    $mail->SMTPAuth = true;
+                    $mail->Username = $smtp_user;
+                    $mail->Password = (string) $smtp_pass;
+                }
+                if ($smtp_enc === 'ssl') {
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                } elseif ($smtp_enc === 'tls') {
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                }
+            }
+        }
+
+        $mail->setFrom($from_address, $from_name);
+        $mail->addAddress($to);
+        if (!empty($reply_to)) {
+            $mail->addReplyTo($reply_to);
+        }
+        if (!empty($cc)) {
+            $mail->addCC($cc);
+        }
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body = $html;
+        $mail->AltBody = trim(strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>', '</h1>', '</h2>', '</h3>'], "\n", $html)));
+
+        $mail->send();
+        return true;
+    } catch (PHPMailerException $e) {
+        log_message("BŁĄD send_email_html do {$to}: " . $mail->ErrorInfo);
+        error_log("send_email_html exception: " . $e->getMessage());
+        return false;
+    } catch (\Throwable $e) {
+        log_message("BŁĄD send_email_html do {$to} (Throwable): " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Po przyjęciu webhooka P24 oddaj odpowiedź klientowi (P24) zanim zaczniemy
+ * wysyłać maile – inaczej długo trwający SMTP wisi webhook i P24 ponawia.
+ */
+function finish_webhook_response(string $body = 'OK'): void
+{
+    if (headers_sent()) {
+        return;
+    }
+    ignore_user_abort(true);
+    http_response_code(200);
+    header('Content-Type: text/plain; charset=UTF-8');
+    header('Connection: close');
+    header('Content-Length: ' . strlen($body));
+    echo $body;
+    if (function_exists('fastcgi_finish_request')) {
+        @fastcgi_finish_request();
+    } else {
+        @ob_end_flush();
+        @flush();
+    }
+}
 
 // --- Funkcje API ---
 

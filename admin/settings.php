@@ -26,9 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'production_inpost_org_id', 'production_inpost_token',
             'sandbox_geowidget_token', 'production_geowidget_token', // <-- NOWE TOKENY
             'large_parcel_surcharge', // <-- NOWA DOPŁATA
-            'service_receiver_name', 'service_receiver_email', 'service_receiver_phone', 'service_receiver_locker',
+            'service_receiver_name', 'service_receiver_email', 'service_receiver_phone',
+            'sandbox_service_receiver_locker', 'production_service_receiver_locker',
             'sender_name_override',
             'email_from_address', 'email_from_name',
+            'sandbox_smtp_host', 'sandbox_smtp_port', 'sandbox_smtp_user', 'sandbox_smtp_password', 'sandbox_smtp_encryption',
+            'production_smtp_host', 'production_smtp_port', 'production_smtp_user', 'production_smtp_password', 'production_smtp_encryption',
             'global_quote_subject', 'global_quote_body'
         ];
 
@@ -182,9 +185,28 @@ $default_quote_body = get_default_quote_body();
                 <input type="email" id="service_receiver_email" name="service_receiver_email" value="<?php echo get_current_setting_value('service_receiver_email', $current_settings); ?>" required>
                 <label for="service_receiver_phone">Telefon odbiorcy</label>
                 <input type="tel" id="service_receiver_phone" name="service_receiver_phone" value="<?php echo get_current_setting_value('service_receiver_phone', $current_settings); ?>" required>
-                <label for="service_receiver_locker">Docelowy Paczkomat odbiorcy (ID)</label>
-                <input type="text" id="service_receiver_locker" name="service_receiver_locker" value="<?php echo get_current_setting_value('service_receiver_locker', $current_settings); ?>" required>
             </div>
+            <?php
+                $legacy_locker = $current_settings['service_receiver_locker'] ?? '';
+                $sandbox_locker_default = $current_settings['sandbox_service_receiver_locker'] ?? $legacy_locker;
+                $production_locker_default = $current_settings['production_service_receiver_locker'] ?? $legacy_locker;
+            ?>
+            <details class="settings-subcard" open>
+                <summary>Docelowy Paczkomat odbiorcy — Środowisko Sandbox (Testowe)</summary>
+                <div class="setting-group">
+                    <label for="sandbox_service_receiver_locker">Sandbox – ID paczkomatu odbiorcy</label>
+                    <input type="text" id="sandbox_service_receiver_locker" name="sandbox_service_receiver_locker" value="<?php echo htmlspecialchars($sandbox_locker_default); ?>" required>
+                    <small>Używany, gdy aktywny jest tryb Sandbox InPost (np. KRA012).</small>
+                </div>
+            </details>
+            <details class="settings-subcard">
+                <summary>Docelowy Paczkomat odbiorcy — Środowisko Produkcyjne</summary>
+                <div class="setting-group">
+                    <label for="production_service_receiver_locker">Produkcja – ID paczkomatu odbiorcy</label>
+                    <input type="text" id="production_service_receiver_locker" name="production_service_receiver_locker" value="<?php echo htmlspecialchars($production_locker_default); ?>" required>
+                    <small>Używany w trybie produkcyjnym InPost (np. JAS02N).</small>
+                </div>
+            </details>
         </fieldset>
     </details>
 
@@ -201,6 +223,54 @@ $default_quote_body = get_default_quote_body();
                 <label for="email_from_name">Nazwa nadawcy "Od" (w powiadomieniach)</label>
                 <input type="text" id="email_from_name" name="email_from_name" value="<?php echo get_current_setting_value('email_from_name', $current_settings); ?>" required>
             </div>
+        </fieldset>
+    </details>
+
+    <details class="settings-card">
+        <summary>Ustawienia SMTP (wysyłka e-maili)</summary>
+        <fieldset>
+            <legend>Ustawienia SMTP (wysyłka e-maili)</legend>
+            <p><small>Jeśli pole „Host SMTP" jest puste dla aktywnego trybu, system użyje wbudowanej funkcji PHP <code>mail()</code>. Tryb (Sandbox/Produkcja) bierzemy z ustawień Przelewy24.</small></p>
+            <details class="settings-subcard" open>
+                <summary>Środowisko Sandbox (Testowe)</summary>
+                <div class="setting-group">
+                    <label for="sandbox_smtp_host">Sandbox – Host SMTP</label>
+                    <input type="text" id="sandbox_smtp_host" name="sandbox_smtp_host" value="<?php echo get_current_setting_value('sandbox_smtp_host', $current_settings); ?>" placeholder="np. smtp.gmail.com">
+                    <label for="sandbox_smtp_port">Sandbox – Port</label>
+                    <input type="number" id="sandbox_smtp_port" name="sandbox_smtp_port" value="<?php echo get_current_setting_value('sandbox_smtp_port', $current_settings, '587'); ?>" min="1" max="65535">
+                    <label for="sandbox_smtp_user">Sandbox – Użytkownik</label>
+                    <input type="text" id="sandbox_smtp_user" name="sandbox_smtp_user" value="<?php echo get_current_setting_value('sandbox_smtp_user', $current_settings); ?>" autocomplete="off">
+                    <label for="sandbox_smtp_password">Sandbox – Hasło</label>
+                    <input type="password" id="sandbox_smtp_password" name="sandbox_smtp_password" value="<?php echo get_current_setting_value('sandbox_smtp_password', $current_settings); ?>" autocomplete="new-password">
+                    <label for="sandbox_smtp_encryption">Sandbox – Szyfrowanie</label>
+                    <select id="sandbox_smtp_encryption" name="sandbox_smtp_encryption">
+                        <?php $sandbox_enc = $current_settings['sandbox_smtp_encryption'] ?? 'tls'; ?>
+                        <option value="tls" <?php echo $sandbox_enc === 'tls' ? 'selected' : ''; ?>>STARTTLS (port 587)</option>
+                        <option value="ssl" <?php echo $sandbox_enc === 'ssl' ? 'selected' : ''; ?>>SSL/TLS (port 465)</option>
+                        <option value="none" <?php echo $sandbox_enc === 'none' ? 'selected' : ''; ?>>Brak (niezalecane)</option>
+                    </select>
+                </div>
+            </details>
+            <details class="settings-subcard">
+                <summary>Środowisko Produkcyjne</summary>
+                <div class="setting-group">
+                    <label for="production_smtp_host">Produkcja – Host SMTP</label>
+                    <input type="text" id="production_smtp_host" name="production_smtp_host" value="<?php echo get_current_setting_value('production_smtp_host', $current_settings); ?>" placeholder="np. smtp.gmail.com">
+                    <label for="production_smtp_port">Produkcja – Port</label>
+                    <input type="number" id="production_smtp_port" name="production_smtp_port" value="<?php echo get_current_setting_value('production_smtp_port', $current_settings, '587'); ?>" min="1" max="65535">
+                    <label for="production_smtp_user">Produkcja – Użytkownik</label>
+                    <input type="text" id="production_smtp_user" name="production_smtp_user" value="<?php echo get_current_setting_value('production_smtp_user', $current_settings); ?>" autocomplete="off">
+                    <label for="production_smtp_password">Produkcja – Hasło</label>
+                    <input type="password" id="production_smtp_password" name="production_smtp_password" value="<?php echo get_current_setting_value('production_smtp_password', $current_settings); ?>" autocomplete="new-password">
+                    <label for="production_smtp_encryption">Produkcja – Szyfrowanie</label>
+                    <select id="production_smtp_encryption" name="production_smtp_encryption">
+                        <?php $prod_enc = $current_settings['production_smtp_encryption'] ?? 'tls'; ?>
+                        <option value="tls" <?php echo $prod_enc === 'tls' ? 'selected' : ''; ?>>STARTTLS (port 587)</option>
+                        <option value="ssl" <?php echo $prod_enc === 'ssl' ? 'selected' : ''; ?>>SSL/TLS (port 465)</option>
+                        <option value="none" <?php echo $prod_enc === 'none' ? 'selected' : ''; ?>>Brak (niezalecane)</option>
+                    </select>
+                </div>
+            </details>
         </fieldset>
     </details>
 

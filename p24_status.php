@@ -28,7 +28,7 @@ $inpost_getShipmentBaseUrl = $inpost_apiUrlBase . "/shipments/";
 $receiver_name = get_setting('service_receiver_name', $pdo);
 $receiver_email = get_setting('service_receiver_email', $pdo); // <-- E-mail admina/serwisu
 $receiver_phone = get_setting('service_receiver_phone', $pdo);
-$receiver_locker = get_setting('service_receiver_locker', $pdo);
+$receiver_locker = get_active_setting('service_receiver_locker', $pdo);
 $sender_name_override = get_setting('sender_name_override', $pdo);
 $email_from_address = get_setting('email_from_address', $pdo); // <-- E-mail 'Od'
 $email_from_name = get_setting('email_from_name', $pdo);
@@ -119,75 +119,66 @@ if ($p24VerifyResult['http_code'] == 200 && isset($p24VerifyResult['data']['data
     }
 
     $existing_shipment_id = $order['inpost_shipment_id'];
+    $resend_only = $existing_shipment_id && $order['repair_status'] == 'label_generated';
 
-    if ($existing_shipment_id && $order['repair_status'] == 'label_generated') {
-        log_message("Informacja: Etykieta InPost dla sessionId {$session_id} już istnieje (ID: {$existing_shipment_id}).");
-         // Logika ponownego wysłania e-maila
-         if ($order['repair_status'] == 'new') {
-            log_message("Status naprawy to 'new', ponowne wysyłanie e-maila z etykietą.");
-            
-            $trackingNumber = $order['inpost_tracking_number'] ?? 'Brak danych';
-            $shipmentId = $existing_shipment_id;
-            $labelDownloadPageLink = "https://butolog.pl/zamowienie/download_page.php?shipment_id=" . $shipmentId;
-            $customerEmail = $order['sender_email']; 
-            $customerName = $order['sender_name']; 
-            $amountPaid = number_format($p24WebhookData['amount'] / 100, 2, ',', ''); 
-            $currency = $p24WebhookData['currency'];
-            $targetLocker = $receiver_locker;
+    if ($resend_only) {
+        log_message("Informacja: Etykieta InPost dla sessionId {$session_id} już istnieje (ID: {$existing_shipment_id}). Ponawiam wysyłkę e-maila do klienta.");
 
-            // Formatowanie adresu zwrotnego
-            $returnLockerId_cleaned = str_replace("PL", "", $order['return_locker_id']);
-            $returnLockerAddress = "";
-            if (!empty($order['return_locker_street'])) { $returnLockerAddress .= $order['return_locker_street'] . ", "; }
-            if (!empty($order['return_locker_postcode'])) { $returnLockerAddress .= $order['return_locker_postcode'] . " "; }
-            if (!empty($order['return_locker_city'])) { $returnLockerAddress .= $order['return_locker_city']; }
-            $returnLockerAddress = trim(trim($returnLockerAddress), ",");
-            
-            // Link do śledzenia
-            $trackingLink = '';
-            if ($trackingNumber != 'Brak danych' && $trackingNumber != 'Oczekuje na nadanie') {
-                $trackingLink = "https://inpost.pl/sledzenie-przesylek?number=" . urlencode($trackingNumber);
-            }
+        // Oddaj odpowiedź P24 zanim wyślemy maila (mail może wisieć minutami).
+        finish_webhook_response('OK');
 
-            $subject = "[Ponowne wysłanie] Potwierdzenie opłaty i etykieta nadawcza {$email_from_name} (Zam: {$sessionId})";
-            
-            // Budowanie e-maila HTML
-            $message_html_customer = "<html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>";
-            $message_html_customer .= "<p style='font-size: 1.1em;'>Witaj {$customerName},</p>";
-            // ... (reszta e-maila do klienta) ...
-            $message_html_customer .= "<p style='margin-top: 15px;'><strong>Strona do pobrania etykiety (PDF):</strong><br>";
-            $message_html_customer .= "<a href='{$labelDownloadPageLink}' target='_blank' style='color: #007bff; text-decoration: none;'>{$labelDownloadPageLink}</a></p>";
-            if ($trackingLink) { $message_html_customer .= "<p style='margin-top: 15px;'><strong>Numer przesyłki (śledzenia) do nas:</strong><br><a href='{$trackingLink}' target='_blank' style='color: #007bff; text-decoration: none;'>{$trackingNumber} (Kliknij, aby śledzić)</a></p>"; }
-            else { $message_html_customer .= "<p style='margin-top: 15px;'><strong>Numer przesyłki (śledzenia) do nas:</strong> {$trackingNumber}</p>"; }
-            $message_html_customer .= "<p style='font-size: 0.9em; color: #555;'>Prosimy o wydrukowanie etykiety, naklejenie jej na paczkę i nadanie w dowolnym paczomacie lub PaczkoPunkcie. Została ona zaadresowana do naszego paczkomatu: {$targetLocker}.</p>";
-            $message_html_customer .= "<h3 style='color: #5d4037; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px;'>DANE ZWROTNE</h3>";
-            $message_html_customer .= "<p>Po naprawie odeślemy buty do wskazanego przez Ciebie paczkomatu:</p>";
-            $message_html_customer .= "<p style='margin-top: 15px; padding: 10px; background-color: #f9f9f9; border-radius: 5px;'>";
-            $message_html_customer .= "<strong>Paczkomat:</strong> {$returnLockerId_cleaned}<br>";
-            if (!empty($returnLockerAddress)) { $message_html_customer .= "<strong>Adres:</strong> {$returnLockerAddress}"; }
-            $message_html_customer .= "</p>";
-            $message_html_customer .= "<p style='margin-top: 30px;'>Pozdrawiamy,<br>Zespół {$email_from_name}</p>";
-            $message_html_customer .= "</body></html>";
+        $trackingNumber = $order['inpost_tracking_number'] ?? 'Oczekuje na nadanie';
+        $shipmentId = $existing_shipment_id;
+        $labelDownloadPageLink = "https://butolog.pl/zamowienie/download_page.php?shipment_id=" . $shipmentId;
+        $customerEmail = $order['sender_email'];
+        $customerName = $order['sender_name'];
+        $amountPaid = number_format($p24WebhookData['amount'] / 100, 2, ',', '');
+        $currency = $p24WebhookData['currency'];
+        $targetLocker = $receiver_locker;
 
-             $headers_customer = "From: {$email_from_name} <{$email_from_address}>\r\n"
-                      . "Reply-To: {$email_from_address}\r\n"
-                      . "MIME-Version: 1.0\r\n"
-                      . "Content-Type: text/html; charset=UTF-8\r\n"
-                      . "X-Mailer: PHP/" . phpversion();
+        $returnLockerId_cleaned = str_replace("PL", "", $order['return_locker_id'] ?? '');
+        $returnLockerAddress = "";
+        if (!empty($order['return_locker_street'])) { $returnLockerAddress .= $order['return_locker_street'] . ", "; }
+        if (!empty($order['return_locker_postcode'])) { $returnLockerAddress .= $order['return_locker_postcode'] . " "; }
+        if (!empty($order['return_locker_city'])) { $returnLockerAddress .= $order['return_locker_city']; }
+        $returnLockerAddress = trim(trim($returnLockerAddress), ",");
 
-             if (mail($customerEmail, $subject, $message_html_customer, $headers_customer)) { 
-                 log_message("Pomyślnie wysłano ponownie e-mail (HTML) dla sessionId: {$session_id} na adres: " . $customerEmail);
-             } else { 
-                 log_message("BŁĄD: mail() nie powiodło się przy ponownym wysłaniu dla sessionId: {$session_id}.");
-             }
-             
-             try {
-                $pdo->prepare("UPDATE orders SET repair_status = 'label_generated', updated_at = NOW() WHERE session_id = ? AND repair_status = 'new'")->execute([$session_id]);
-             } catch (\PDOException $e) { 
-                 error_log("DB Error updating repair_status after resend for {$session_id}: " . $e->getMessage());
-             }
-         }
+        $trackingLink = '';
+        if ($trackingNumber && $trackingNumber !== 'Oczekuje na nadanie') {
+            $trackingLink = "https://inpost.pl/sledzenie-przesylek?number=" . urlencode($trackingNumber);
+        }
 
+        $subject = "[Ponowne wysłanie] Potwierdzenie opłaty i etykieta nadawcza {$email_from_name} (Zam: {$session_id})";
+
+        $message_html_customer  = "<html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>";
+        $message_html_customer .= "<p style='font-size: 1.1em;'>Witaj {$customerName},</p>";
+        $message_html_customer .= "<p>Przesyłamy ponownie potwierdzenie opłaty i etykietę nadawczą dla zamówienia <strong>{$session_id}</strong>.</p>";
+        $message_html_customer .= "<p style='margin-top: 20px; padding: 10px; background-color: #f4f4f4; border-radius: 5px;'>";
+        $message_html_customer .= "<strong>Status płatności:</strong> OPŁACONE<br>";
+        $message_html_customer .= "<strong>Kwota:</strong> {$amountPaid} {$currency}";
+        $message_html_customer .= "</p>";
+        $message_html_customer .= "<h3 style='color: #5d4037; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px;'>ETYKIETA NADAWCZA INPOST</h3>";
+        $message_html_customer .= "<p style='margin-top: 15px;'><strong>Strona do pobrania etykiety (PDF):</strong><br>";
+        $message_html_customer .= "<a href='{$labelDownloadPageLink}' target='_blank' style='color: #007bff; text-decoration: none;'>{$labelDownloadPageLink}</a></p>";
+        if ($trackingLink) { $message_html_customer .= "<p style='margin-top: 15px;'><strong>Numer przesyłki (śledzenia) do nas:</strong><br><a href='{$trackingLink}' target='_blank' style='color: #007bff; text-decoration: none;'>{$trackingNumber} (Kliknij, aby śledzić)</a></p>"; }
+        else { $message_html_customer .= "<p style='margin-top: 15px;'><strong>Numer przesyłki (śledzenia) do nas:</strong> {$trackingNumber}</p>"; }
+        $message_html_customer .= "<p style='font-size: 0.9em; color: #555;'>Prosimy o wydrukowanie etykiety, naklejenie jej na paczkę i nadanie w dowolnym paczomacie lub PaczkoPunkcie. Została ona zaadresowana do naszego paczkomatu: {$targetLocker}.</p>";
+        $message_html_customer .= "<h3 style='color: #5d4037; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px;'>DANE ZWROTNE</h3>";
+        $message_html_customer .= "<p>Po naprawie odeślemy buty do wskazanego przez Ciebie paczkomatu:</p>";
+        $message_html_customer .= "<p style='margin-top: 15px; padding: 10px; background-color: #f9f9f9; border-radius: 5px;'>";
+        $message_html_customer .= "<strong>Paczkomat:</strong> {$returnLockerId_cleaned}<br>";
+        if (!empty($returnLockerAddress)) { $message_html_customer .= "<strong>Adres:</strong> {$returnLockerAddress}"; }
+        $message_html_customer .= "</p>";
+        $message_html_customer .= "<p style='margin-top: 30px;'>Pozdrawiamy,<br>Zespół {$email_from_name}</p>";
+        $message_html_customer .= "</body></html>";
+
+        if (send_email_html($customerEmail, $subject, $message_html_customer, $email_from_name, $email_from_address)) {
+            log_message("Pomyślnie wysłano ponownie e-mail (HTML) dla sessionId: {$session_id} na adres: " . $customerEmail);
+        } else {
+            log_message("BŁĄD: send_email_html() nie powiodło się przy ponownym wysłaniu dla sessionId: {$session_id}.");
+        }
+
+        exit;
     } else {
         // --- Generowanie Standardowej Etykiety InPost ---
         log_message("Rozpoczynanie generowania etykiety InPost dla sessionId: {$session_id}");
@@ -263,6 +254,10 @@ if ($p24VerifyResult['http_code'] == 200 && isset($p24VerifyResult['data']['data
                  log_message("Zaktualizowano zamówienie {$session_id} o dane InPost.");
             } catch (\PDOException $e) { error_log("DB Error updating order with InPost data for {$session_id}: " . $e->getMessage()); }
 
+            // Oddaj odpowiedź P24 zanim wyślemy maile — SMTP/mail() może wisieć
+            // i blokować webhook (P24 by ponawiał), a status InPost mamy już zapisany.
+            finish_webhook_response('OK');
+
             // --- 1. WYSYŁKA E-MAILA DO KLIENTA ---
             $labelDownloadPageLink = "https://butolog.pl/zamowienie/download_page.php?shipment_id=" . $shipmentId;
             $customerEmail = $order['sender_email'];
@@ -297,7 +292,6 @@ if ($p24VerifyResult['http_code'] == 200 && isset($p24VerifyResult['data']['data
             $message_html_customer .= "<a href='{$labelDownloadPageLink}' target='_blank' style='color: #007bff; text-decoration: none;'>{$labelDownloadPageLink}</a></p>";
             if ($trackingLink) { $message_html_customer .= "<p style='margin-top: 15px;'><strong>Numer przesyłki (śledzenia) do nas:</strong><br><a href='{$trackingLink}' target='_blank' style='color: #007bff; text-decoration: none;'>{$trackingNumber} (Kliknij, aby śledzić)</a></p>"; }
             else { $message_html_customer .= "<p style='margin-top: 15px;'><strong>Numer przesyłki (śledzenia) do nas:</strong> {$trackingNumber}</p>"; }
-            $message_html_admin .= "<h3 style='border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px;'>Dane Klienta (Nadawcy)</h3>";
             $message_html_customer .= "<p style='font-size: 0.9em; color: #555;'>Prosimy o wydrukowanie etykiety, naklejenie jej na paczkę i nadanie w dowolnym paczomacie lub PaczkoPunkcie. Została ona zaadresowana do naszego serwisu napraw.</p>";
             $message_html_customer .= "<h3 style='color: #5d4037; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px;'>DANE ZWROTNE</h3>";
             $message_html_customer .= "<p>Po naprawie odeślemy buty do wskazanego przez Ciebie paczkomatu:</p>";
@@ -308,17 +302,11 @@ if ($p24VerifyResult['http_code'] == 200 && isset($p24VerifyResult['data']['data
             $message_html_customer .= "<p style='margin-top: 30px;'>Pozdrawiamy,<br>Zespół {$email_from_name}</p>";
             $message_html_customer .= "</body></html>";
 
-            $headers_customer = "From: {$email_from_name} <{$email_from_address}>\r\n"
-                              . "Reply-To: {$email_from_address}\r\n"
-                              . "MIME-Version: 1.0\r\n"
-                              . "Content-Type: text/html; charset=UTF-8\r\n"
-                              . "X-Mailer: PHP/" . phpversion();
-
-            if (mail($customerEmail, $subject_customer, $message_html_customer, $headers_customer)) {
+            if (send_email_html($customerEmail, $subject_customer, $message_html_customer, $email_from_name, $email_from_address)) {
                 log_message("Pomyślnie wysłano e-mail (HTML) do KLIENTA dla sessionId: {$session_id} na adres: " . $customerEmail);
             } else {
-                log_message("BŁĄD: mail() nie powiodło się przy wysyłaniu do KLIENTA dla sessionId: {$session_id}.");
-                error_log("PHP Mail Error: Failed to send email to CUSTOMER {$customerEmail} for session {$session_id}");
+                log_message("BŁĄD: send_email_html() nie powiodło się przy wysyłaniu do KLIENTA dla sessionId: {$session_id}.");
+                error_log("Mail Error: Failed to send email to CUSTOMER {$customerEmail} for session {$session_id}");
             }
             
             // === NOWA SEKCJA: 2. WYSYŁKA E-MAILA DO ADMINA/SERWISU ===
@@ -351,17 +339,11 @@ if ($p24VerifyResult['http_code'] == 200 && isset($p24VerifyResult['data']['data
             $message_html_admin .= "<p style='margin-top: 30px; font-size: 0.9em; color: #777;'>To jest automatyczne powiadomienie systemowe.</p>";
             $message_html_admin .= "</body></html>";
 
-            $headers_admin = "From: {$email_from_name} (System) <{$email_from_address}>\r\n"
-                           . "Reply-To: " . htmlspecialchars($order['sender_email']) . "\r\n" // Ustaw Reply-To na e-mail klienta
-                           . "MIME-Version: 1.0\r\n"
-                           . "Content-Type: text/html; charset=UTF-8\r\n"
-                           . "X-Mailer: PHP/" . phpversion();
-
-            if (mail($receiver_email, $subject_admin, $message_html_admin, $headers_admin)) {
+            if (send_email_html($receiver_email, $subject_admin, $message_html_admin, $email_from_name . ' (System)', $email_from_address, $order['sender_email'])) {
                 log_message("Pomyślnie wysłano powiadomienie do ADMINA ({$receiver_email}) dla sessionId: {$session_id}");
             } else {
-                log_message("BŁĄD: mail() nie powiodło się przy wysyłaniu do ADMINA dla sessionId: {$session_id}.");
-                error_log("PHP Mail Error: Failed to send email to ADMIN {$receiver_email} for session {$session_id}");
+                log_message("BŁĄD: send_email_html() nie powiodło się przy wysyłaniu do ADMINA dla sessionId: {$session_id}.");
+                error_log("Mail Error: Failed to send email to ADMIN {$receiver_email} for session {$session_id}");
             }
             // =======================================================
             
@@ -392,9 +374,11 @@ if ($p24VerifyResult['http_code'] == 200 && isset($p24VerifyResult['data']['data
     }
 }
 
-// === KROK 4: Zawsze odpowiedz P24 kodem 200 OK ===
-http_response_code(200);
-echo "OK";
+// === KROK 4: Zawsze odpowiedz P24 kodem 200 OK (jeśli nagłówki nie zostały już wysłane przez finish_webhook_response) ===
+if (!headers_sent()) {
+    http_response_code(200);
+    echo "OK";
+}
 exit;
 
 ?>

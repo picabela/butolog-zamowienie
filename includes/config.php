@@ -15,9 +15,9 @@ define('DB_CHARSET', 'utf8mb4');
 // Ustawienia raportowania błędów (zalecane dla developera)
 // Na produkcji ustaw display_errors na 0 i loguj błędy do pliku
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // Zmień na 0 na produkcji
+ini_set('display_errors', 0); // Produkcja — nie wyciekaj błędów PHP do output (psuje webhooki, JSON, redirecty)
 ini_set('log_errors', 1);
-ini_set('error_log', '../status_log.txt'); // Loguj błędy PHP do tego samego pliku co logi aplikacji
+ini_set('error_log', __DIR__ . '/../status_log.txt'); // Loguj błędy PHP do tego samego pliku co logi aplikacji (ścieżka absolutna)
 
 // Ustawienie strefy czasowej
 date_default_timezone_set('Europe/Warsaw');
