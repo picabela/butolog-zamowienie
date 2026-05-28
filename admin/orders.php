@@ -62,6 +62,7 @@ try {
                     <th style="text-align: center;">Status Płatności</th>
                     <th style="text-align: center;">Status Naprawy</th>
                     <th>Nr Przesyłki InPost</th>
+                    <th>Wysyłka zwrotna</th>
                     <th style="text-align: center;">Akcje</th>
                 </tr>
             </thead>
@@ -96,6 +97,31 @@ try {
                                 </a>
                             <?php else: ?>
                                 -
+                            <?php endif; ?>
+                        </td>
+                        <td data-label="Wysyłka zwrotna">
+                            <?php
+                                $return_locker_id_clean = str_replace('PL', '', $order['return_locker_id'] ?? '');
+                                $return_address_parts = array_filter([
+                                    $order['return_locker_street'] ?? '',
+                                    trim(($order['return_locker_postcode'] ?? '') . ' ' . ($order['return_locker_city'] ?? ''))
+                                ], fn($v) => $v !== '');
+                                $return_address = implode(', ', $return_address_parts);
+                            ?>
+                            <strong><?php echo htmlspecialchars($order['sender_name']); ?></strong><br>
+                            <?php if (!empty($order['sender_phone'])): ?>
+                                <small>tel. <?php echo htmlspecialchars($order['sender_phone']); ?></small><br>
+                            <?php endif; ?>
+                            <?php if (!empty($return_locker_id_clean)): ?>
+                                <small><strong>Paczkomat:</strong> <?php echo htmlspecialchars($return_locker_id_clean); ?></small><br>
+                                <?php if (!empty($return_address)): ?>
+                                    <small><?php echo htmlspecialchars($return_address); ?></small><br>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <small>Brak paczkomatu zwrotnego</small><br>
+                            <?php endif; ?>
+                            <?php if (!empty($order['inpost_shipment_id'])): ?>
+                                <a href="../fetch_label.php?shipment_id=<?php echo urlencode($order['inpost_shipment_id']); ?>" target="_blank" rel="noopener" title="Pobierz etykietę PDF">📄 Pobierz etykietę PDF</a>
                             <?php endif; ?>
                         </td>
                         <td data-label="Akcje" style="text-align: center;">
